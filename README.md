@@ -1,238 +1,159 @@
-# Sistem Manajemen Pengiriman Ekspedisi Bus
+# 🚚 NusantaraExpress: Sistem Informasi Manajemen Ekspedisi & Logistik Terpadu
 
-## 1. Tema (Mengerucut)
+> **Tugas / Proyek Mata Kuliah:** Rekayasa Perangkat Lunak (Semester 3)  
+> **Aplikasi:** NusantaraExpress Web Application  
+> **Tech Stack:** Next.js 15 (App Router, TypeScript), Tailwind CSS, Prisma ORM (SQLite), jsbarcode, date-fns  
 
-Pengembangan **website manajemen pengiriman barang untuk ekspedisi bus** yang membantu proses pemesanan, penentuan tarif, dan pemantauan status pengiriman dalam satu sistem.
+---
 
-Ruang lingkup proyek dibatasi pada operasional pengiriman barang pada satu perusahaan ekspedisi bus. Fokus utama aplikasi adalah digitalisasi proses yang sebelumnya dilakukan secara manual atau menggunakan dokumen fisik.
+## 1. Penjabaran Judul yang Diambil
 
-## 2. Deskripsi Masalah
+### **Judul Lengkap:**
+> **"NusantaraExpress: Sistem Informasi Manajemen Ekspedisi & Logistik Terpadu Berbasis Web dengan Pelacakan Multi-Modal Real-Time dan Standarisasi Cetak Label Thermal 100mm × 150mm"**
 
-Proses transaksi pada perusahaan ekspedisi masih dilakukan secara offline. Pencatatan pesanan, pembuatan bukti transaksi, pengelolaan tarif, dan pembaruan status pengiriman membutuhkan dokumen fisik serta pencatatan berulang. Kondisi ini menimbulkan beberapa masalah:
+### **Penjabaran Istilah / Konsep Judul:**
+1. **NusantaraExpress**:  
+   Identitas sistem logistik yang dirancang dengan jangkauan geografis kepulauan Indonesia (dari Sabang sampai Merauke), mengintegrasikan rute multi-modal (darat, laut, dan kargo udara).
+2. **Sistem Informasi Manajemen Ekspedisi & Logistik Terpadu**:  
+   Perangkat lunak yang mengintegrasikan seluruh siklus hidup pengiriman barang dalam satu pintu: pembuatan order oleh pengirim, penjemputan barang, pemindaian di sorting hub & gateway bandara, pengantaran oleh kurir, hingga analitik operasional manajemen.
+3. **Pelacakan Multi-Modal Real-Time (Live Tracking)**:  
+   Mekanisme pelacakan visual berbasis nomor resi (*Air Waybill / AWB*) yang menampilkan *milestone stepper* (tahapan perjalanan) dan lini masa vertikal kronologis dengan stempel waktu Indonesia (WIB/WITA/WIT), lokasi pos sortir, serta catatan petugas.
+4. **Standarisasi Cetak Label Thermal (100mm × 150mm)**:  
+   Fitur pembuatan Surat Jalan / Waybill standar industri ekspedisi global yang siap dicetak langsung menggunakan printer thermal 4×6 inci, dilengkapi barcode scannable (Code128), QR Code verifikasi, dan perincian berat volumetrik.
 
-- proses pelayanan pelanggan menjadi lebih lambat;
-- biaya operasional untuk nota dan alat tulis kantor meningkat;
-- data transaksi lebih sulit dicari dan direkap;
-- pelanggan belum dapat mengetahui perkiraan ongkos kirim sebelum melakukan pemesanan; dan
-- pemilik usaha kesulitan memantau jumlah transaksi serta pendapatan dalam periode tertentu.
+---
 
-Oleh karena itu, dibutuhkan sebuah website yang dapat memusatkan proses pemesanan dan pengelolaan data pengiriman secara lebih terstruktur, efisien, dan mudah dipantau.
+## 2. Big Picture Permasalahan
 
-## 3. Profil Target Pengguna
+Indonesia merupakan negara kepulauan terbesar di dunia dengan lebih dari 17.000 pulau. Pertumbuhan pesat sektor perdagangan digital (*E-commerce*) dan UMKM lokal menuntut sistem rantai pasok (*supply chain*) yang tangguh, cepat, dan transparan. Namun, di lapangan masih banyak ditemukan kendala operasional mendasar:
 
-### A. Konsumen
+1. **Ketidaksesuaian & Ketidakjelasan Perhitungan Ongkos Kirim (Volumetrik vs. Berat Asli)**:  
+   Banyak pengirim pemula atau pelaku UMKM salah menghitung biaya barang yang berukuran besar tetapi ringan. Kurangnya transparansi perhitungan matematis rumus volumetrik $((P \times L \times T) / 6000)$ sering kali memicu sengketa selisih biaya antara pelanggan dan ekspedisi di gerai drop-off.
+2. **Titik Buta (*Blind Spot*) Informasi Status Paket**:  
+   Pelanggan sering mengalami kecemasan akibat status resi yang lambat diperbarui (*stale tracking*), informasi checkpoint yang rancu, atau ketiadaan catatan alasan ketika paket gagal terkirim.
+3. **Ketiadaan Standarisasi Format Surat Jalan / Label Pengiriman**:  
+   Banyak pengirim skala kecil masih menuliskan alamat secara manual dengan pulpen pada kardus paket. Hal ini rawan rusak terkena air, sulit dibaca kurir, tidak memiliki barcode untuk dipindai scanner hub, dan memperlambat alur pemilahan barang di ban berjalan (*sorting conveyor*).
+4. **Disiplin Pencatatan Checkpoint oleh Petugas Lapangan**:  
+   Diperlukan sistem pencatatan checkpoint yang ringkas dan cepat digunakan oleh kurir serta operator hub gudang tanpa alur input yang berbelit-belit.
 
-Pelanggan yang ingin mengirimkan barang melalui jasa ekspedisi bus. Konsumen membutuhkan informasi tarif, formulir pemesanan, dan informasi status pengiriman yang mudah diakses.
+---
 
-### B. Admin Operasional
+## 3. Kenapa Mengambil Judul Ini (Alasan & Urgensi)
 
-Petugas perusahaan yang menerima serta memproses pesanan pengiriman. Admin bertanggung jawab memvalidasi data pesanan, mengatur tarif, dan memperbarui status pengiriman.
+1. **Relevansi Nyata di Industri Rekayasa Perangkat Lunak**:  
+   Sistem logistik dan ekspedisi adalah studi kasus ideal untuk mempraktikkan konsep rekayasa perangkat lunak modern: pemodelan relasi database transaksional (Shipment, TrackingEvent, PriceRate), algoritma deterministik (perhitungan volumetrik dan matriks tarif), manajemen status (*state machine*), hingga kontrol akses multi-peran (Pelanggan, Kurir/Hub, dan Administrator).
+2. **Kebutuhan Digitalisasi Ekosistem UMKM Indonesia**:  
+   Dengan menyediakan portal mandiri yang memfasilitasi pembuatan order instan, pembuatan AWB otomatis berformat standar `NEX-[TAHUN][RANDOM_ALPHANUMERIC]`, serta cetak label thermal scannable, proses bisnis pengiriman barang dapat berjalan jauh lebih profesional dan efisien.
+3. **Transparansi Tarif & Kecepatan Layanan**:  
+   Sistem ini mengkategorisasikan layanan secara cerdas (**NEX REGULAR**, **NEX EXPRESS**, dan **NEX CARGO** dengan ambang batas minimum berat kargo) sehingga pengguna mendapatkan pilihan tarif yang paling optimal sesuai kebutuhan anggaran dan urgensi waktu mereka.
 
-### C. Owner atau Pemilik Usaha
+---
 
-Pemilik perusahaan yang membutuhkan ringkasan operasional dan keuangan untuk memantau kinerja usaha. Owner memiliki akses untuk melihat data, tetapi tidak memiliki hak untuk mengubah tarif atau data operasional utama.
+## 4. Manfaat Proyek
 
-## 4. Manfaat Aplikasi
+### **A. Bagi Pengembang (Mahasiswa / Pembuat Perangkat Lunak):**
+- **Penguasaan Arsitektur Modern Web Full-Stack**: Mengimplementasikan Next.js 15 App Router dengan TypeScript strict mode, Server Components, dan Server Actions yang aman dan berkinerja tinggi.
+- **Penerapan ORM & Basis Data Relasional**: Menguasai pemodelan skema relasi one-to-many antara pengiriman (*Shipment*) dan riwayat aktivitas (*TrackingEvent*), serta pengindeksan matriks tarif (*PriceRate*) menggunakan Prisma ORM dan SQLite.
+- **Penerapan Rekayasa UI/UX Standar Industri**: Mendesain antarmuka responsif dengan Tailwind CSS, komponen visual timeline status, serta penanganan layout cetak `@media print` khusus ukuran kertas 100mm × 150mm.
+- **Pemahaman Algoritma & Standarisasi Logistik**: Mempelajari standarisasi internasional perhitungan volumetrik IATA dan pembangkitan barcode Code128 secara client-side.
 
-- Mengurangi ketergantungan pada nota dan pencatatan manual.
-- Mempercepat proses penerimaan pesanan pengiriman.
-- Membantu konsumen mengetahui perkiraan ongkos kirim sebelum memesan.
-- Memudahkan admin mengelola tarif dan memperbarui status pengiriman.
-- Membantu owner memantau jumlah transaksi dan estimasi pendapatan berdasarkan periode tertentu.
-- Menyediakan data transaksi yang lebih rapi dan mudah ditelusuri.
+### **B. Bagi Orang Lain & Pengguna Sistem:**
 
-## 5. Daftar Fitur Inti
+1. **Bagi Pelanggan & Pelaku UMKM:**
+   - **Kalkulator Tarif Transparan**: Mengetahui estimasi biaya pasti sebelum mengirim paket dengan perbandingan layanan Express, Regular, dan Kargo.
+   - **Cetak Surat Jalan Mandiri (Self-Service)**: Menghemat waktu dengan mencetak label thermal 100×150mm yang siap ditempel ke paket, lengkap dengan barcode Code128 dan QR Code lacak.
+   - **Kepastian Pelacakan**: Live visual timeline memudahkan pemantauan keberadaan paket secara akurat 24/7.
 
-Fitur berikut diprioritaskan sebagai **Minimum Viable Product (MVP)** yang realistis untuk diselesaikan dalam 12 pertemuan:
+2. **Bagi Kurir & Petugas Hub Operasional:**
+   - **Simulator Scanner & Pembaharuan Cepat**: Mempercepat pencatatan status checkpoint paket saat barang tiba di hub, transit di bandara, atau dibawa oleh kurir pengantar.
+   - **Template Keterangan Baku**: Memudahkan pencatatan alasan kendala pengiriman atau nama penerima paket tanpa perlu mengetik panjang.
 
-### Fitur Konsumen
+3. **Bagi Manajemen Ekspedisi / Administrator:**
+   - **Visibilitas Metrik Logistik Real-Time**: Memantau Total Pengiriman, Akumulasi Pendapatan (*Revenue*), Paket Aktif dalam Perjalanan, dan Tingkat Keberhasilan (*Delivery Rate*).
+   - **Pengendalian Matriks Tarif Antar Kota**: Fleksibilitas memperbarui tarif per-kg dan estimasi durasi antar kota besar di Indonesia secara terpusat.
 
-- Registrasi dan login pengguna.
-- Melihat informasi tarif atau menghitung perkiraan ongkos kirim berdasarkan data pengiriman.
-- Membuat pemesanan pengiriman dengan mengisi data pengirim, penerima, serta detail barang.
-- Melihat riwayat pemesanan.
-- Melihat status pengiriman menggunakan nomor resi atau kode pemesanan.
+---
 
-### Fitur Admin Operasional
-
-- Login sesuai hak akses admin.
-- Melihat dan memproses pesanan yang masuk.
-- Mengubah status pengiriman, seperti `Menunggu`, `Diproses`, `Dikirim`, dan `Selesai`.
-- Mengelola tarif berdasarkan parameter sederhana, seperti jarak dan berat barang.
-- Melihat daftar transaksi dan detail pemesanan.
-
-### Fitur Owner
-
-- Login sesuai hak akses owner.
-- Melihat ringkasan jumlah transaksi.
-- Melihat rekap estimasi pendapatan berdasarkan periode tertentu.
-- Melihat daftar tarif dan status transaksi tanpa hak untuk mengubah data operasional.
-
-## 6. Fitur yang Tidak Dikerjakan
-
-Untuk menjaga proyek tetap realistis dalam 12 pertemuan, fitur berikut tidak termasuk dalam ruang lingkup versi pertama:
-
-- pembayaran online dan integrasi dengan payment gateway;
-- integrasi otomatis dengan layanan peta atau GPS untuk pelacakan kendaraan secara real-time;
-- aplikasi mobile Android atau iOS;
-- integrasi dengan WhatsApp, SMS, atau email otomatis;
-- pengelolaan banyak cabang dan banyak perusahaan ekspedisi;
-- sistem akuntansi dan laporan keuangan lengkap;
-- perhitungan tarif yang kompleks berdasarkan banyak zona, promo, atau algoritma dinamis; dan
-- integrasi dengan sistem eksternal seperti marketplace atau jasa ekspedisi lain.
-
-## 7. Kriteria Aplikasi Dinyatakan Berhasil
-
-Aplikasi dinyatakan berhasil apabila skenario utama berikut dapat berjalan dengan baik:
-
-1. Konsumen dapat login, menghitung perkiraan ongkos kirim, dan membuat pesanan pengiriman secara online.
-2. Sistem dapat menyimpan data pesanan dan menghasilkan nomor resi atau kode pemesanan.
-3. Admin dapat melihat pesanan masuk, memperbarui status pengiriman, serta mengatur tarif.
-4. Konsumen dapat melihat status pengiriman berdasarkan nomor resi atau kode pemesanan.
-5. Owner dapat melihat jumlah transaksi dan estimasi pendapatan berdasarkan periode tertentu.
-6. Hak akses setiap peran berjalan sesuai kewenangannya, sehingga konsumen, admin, dan owner hanya dapat mengakses fitur yang relevan.
-7. Seluruh alur utama dapat diuji menggunakan data contoh tanpa proses manual di luar sistem.
-
-Keberhasilan proyek diukur dari berjalannya alur pemesanan sampai pemantauan status pengiriman secara konsisten, bukan dari banyaknya fitur tambahan yang berhasil dibuat.
-
-## 8. Identitas dan Konsep Aplikasi
-
-### Nama Aplikasi
-
-**NusantaraExpress: Sistem Informasi Manajemen Ekspedisi dan Logistik Terpadu**
-
-### Teknologi yang Digunakan
-
-- **Framework:** Next.js 15 dengan App Router dan TypeScript
-- **Antarmuka:** Tailwind CSS
-- **Basis data:** SQLite
-- **ORM:** Prisma ORM
-- **Pendukung:** JsBarcode dan date-fns
-
-### Gambaran Konsep
-
-NusantaraExpress merupakan aplikasi berbasis web yang dirancang untuk membantu proses pengiriman barang melalui ekspedisi bus. Aplikasi ini mengintegrasikan pemesanan, perhitungan ongkos kirim, pembuatan nomor resi, pencatatan status pengiriman, serta pemantauan transaksi dalam satu sistem.
-
-Pelacakan pengiriman ditampilkan berdasarkan nomor resi atau **Air Waybill (AWB)** melalui tahapan perjalanan paket. Setiap perubahan status dapat dilengkapi lokasi checkpoint, waktu pembaruan, dan keterangan petugas sehingga informasi pengiriman lebih mudah dipahami oleh konsumen maupun pihak operasional.
-
-## 9. Pengembangan Masalah Menjadi Solusi
-
-Untuk mendukung permasalahan yang telah dijelaskan sebelumnya, aplikasi menyediakan solusi berikut:
-
-1. **Perhitungan ongkos kirim yang lebih transparan** dengan membandingkan berat asli dan berat volumetrik menggunakan rumus:
-
-	$$\text{Berat Volumetrik} = \frac{P \times L \times T}{6000}$$
-
-2. **Pelacakan status pengiriman yang lebih jelas** melalui stepper tahapan pengiriman dan timeline kronologis.
-3. **Standarisasi label pengiriman** dalam format thermal 100 mm x 150 mm yang memuat nomor resi, barcode, QR code, alamat penerima, dan informasi rute.
-4. **Pencatatan checkpoint yang lebih ringkas** bagi petugas operasional melalui fitur pembaruan status berdasarkan nomor resi.
-
-## 10. Modul Tambahan yang Dirancang
-
-Modul berikut merupakan pengembangan dari fitur inti dan tetap mengikuti batasan ruang lingkup proyek:
+## 5. Fitur Utama Sistem
 
 | Modul | Fitur | Deskripsi |
 | :--- | :--- | :--- |
-| Publik | Cek Resi | Pengguna dapat memasukkan nomor AWB untuk melihat status dan riwayat pengiriman. |
-| Publik | Kalkulator Ongkir | Sistem menghitung estimasi biaya berdasarkan rute, layanan, berat asli, dan berat volumetrik. |
-| Pelacakan | Timeline Pengiriman | Status ditampilkan secara kronologis dari pesanan dibuat hingga paket terkirim. |
-| Surat Jalan | Label Thermal | Sistem menghasilkan label ukuran 100 mm x 150 mm yang dapat dicetak dan dilengkapi barcode serta QR code. |
-| Konsumen | Pendaftaran Pengiriman | Konsumen dapat mengisi data pengirim, penerima, detail barang, dan layanan pengiriman. |
-| Operasional | Pencatatan Checkpoint | Petugas dapat memperbarui status paket berdasarkan lokasi atau tahapan pengiriman. |
-| Owner | Dashboard Ringkasan | Owner dapat melihat ringkasan transaksi, pendapatan, paket aktif, dan tingkat keberhasilan pengiriman. |
+| **Publik** | **Cek Resi (Live Tracking)** | Masukkan nomor AWB (tersedia sampel: `NEX-882910`, `NEX-554201`, `NEX-109283`) untuk melihat status dan timeline langsung. |
+| **Publik** | **Cek Ongkir (Kalkulator Tarif)** | Menghitung perbandingan berat asli vs volumetrik $(P \times L \times T / 6000)$ dan kalkulasi otomatis tarif REGULAR, EXPRESS, dan CARGO. |
+| **Pelacakan** | **Timeline Kronologis & Stepper** | Visual stepper 6 tahap: Pesanan Dibuat $\rightarrow$ Pickup $\rightarrow$ Hub Asal $\rightarrow$ Transit $\rightarrow$ Diantar $\rightarrow$ Terkirim. |
+| **Surat Jalan** | **Thermal Shipping Label** | Label ukuran standar 100mm × 150mm dengan barcode Code128, kode rute hub (`CGK ➔ SUB`), alamat penerima tebal, dan QR code lacak. |
+| **Customer Portal** | **Pendaftaran Pengiriman Baru** | Formulir order pengiriman dengan kalkulasi live biaya, generate otomatis AWB, dan pop-up label thermal siap cetak. |
+| **Courier Portal** | **Scanner & Checkpoint Logger** | Simulator pemindaian AWB, pembaharuan status operasional, pemilihan lokasi hub, serta rekaman live feed aktivitas. |
+| **Admin Portal** | **Dashboard Analitik & Master Data** | Kartu metrik KPI logistik, pencarian/filter master paket se-Indonesia, dan antarmuka edit matriks tarif ongkir antar kota. |
 
-### Tahapan Status Pengiriman
+---
 
-Tahapan status pengiriman yang digunakan dalam versi awal adalah:
+## 6. Struktur Basis Data (Prisma ORM)
 
-`Pesanan Dibuat` -> `Pickup` -> `Hub Asal` -> `Transit` -> `Diantar` -> `Terkirim`
+Skema database tersimpan di `prisma/schema.prisma` menggunakan SQLite (`dev.db`):
+- **`User`**: Data pengguna untuk testing (Admin, Courier, Customer).
+- **`Shipment`**: Data paket (no resi unik, detail pengirim/penerima, dimensi fisik, berat volumetrik, berat tagihan, jenis layanan, total ongkir, status terkini).
+- **`TrackingEvent`**: Riwayat kronologis setiap pergerakan paket di hub atau kurir (shipmentId, status, lokasi checkpoint, keterangan, stempel waktu).
+- **`PriceRate`**: Matriks tarif per kilogram antar kota di Indonesia (Origin, Destination, ServiceType, RatePerKg, EstimatedDays).
 
-Status tersebut dapat disesuaikan oleh admin atau petugas operasional berdasarkan kondisi paket di lapangan.
+---
 
-### Jenis Layanan Pengiriman
+## 7. Cara Menjalankan Aplikasi Secara Lokal
 
-Sistem dapat menyediakan tiga pilihan layanan:
+### **Prasyarat:**
+- Node.js versi 18+ (direkomendasikan Node.js v20 / v22 / v24)
+- npm / yarn / pnpm
 
-- **NEX Regular:** layanan pengiriman standar dengan tarif ekonomis.
-- **NEX Express:** layanan dengan estimasi waktu pengiriman yang lebih cepat.
-- **NEX Cargo:** layanan untuk barang dengan berat atau volume yang lebih besar.
+### **Langkah Instalasi & Eksekusi:**
 
-## 11. Manfaat Teknis dan Pengguna
+1. **Clone atau Masuk ke Direktori Proyek:**
+   ```bash
+   cd "c:\SEMESTER 3\RekayasaPerangkatLunak"
+   ```
 
-### Bagi Pengembang
+2. **Instal Dependensi:**
+   ```bash
+   npm install
+   ```
 
-- Menerapkan arsitektur web full-stack menggunakan Next.js dan TypeScript.
-- Memodelkan hubungan data pengiriman, pengguna, tarif, dan riwayat status menggunakan Prisma ORM.
-- Menerapkan pembagian hak akses berdasarkan role pengguna.
-- Menerapkan algoritma perhitungan tarif dan berat volumetrik secara deterministik.
-- Mendesain tampilan responsif serta format cetak khusus untuk label pengiriman.
+3. **Sinkronisasi Database SQLite & Prisma:**
+   ```bash
+   npx prisma db push
+   ```
 
-### Bagi Konsumen dan Pelaku UMKM
+4. **Jalankan Seeding Data Awal (Matriks Tarif 10 Kota & 3 Resi Sampel):**
+   ```bash
+   npx prisma db seed
+   ```
 
-- Mengetahui estimasi biaya sebelum melakukan pemesanan.
-- Membuat pesanan pengiriman secara mandiri.
-- Mendapatkan nomor resi dan label pengiriman yang lebih rapi.
-- Memantau perkembangan paket melalui timeline status.
+5. **Jalankan Server Pengembang (Development Server):**
+   ```bash
+   npm run dev
+   ```
 
-### Bagi Petugas Operasional
+6. **Buka di Browser:**
+   Akses **[http://localhost:3000](http://localhost:3000)**
 
-- Mempercepat pencatatan status paket di titik checkpoint.
-- Mengurangi kesalahan pencatatan melalui data pengiriman yang tersimpan terpusat.
-- Memudahkan pencarian paket berdasarkan nomor resi.
+---
 
-### Bagi Owner
+## 8. Data Uji Coba (Demo Resi & Rute)
 
-- Melihat jumlah transaksi dan pendapatan pada periode tertentu.
-- Memantau paket yang masih aktif dalam perjalanan.
-- Melihat ringkasan kinerja operasional sebagai bahan evaluasi usaha.
+Aplikasi telah dilengkapi dengan data *pre-seeded* untuk demonstrasi langsung:
 
-## 12. Struktur Basis Data
+| Nomor AWB | Rute Asal $\rightarrow$ Tujuan | Layanan | Status Terkini | Skenario Uji |
+| :--- | :--- | :--- | :--- | :--- |
+| **`NEX-882910`** | Jakarta $\rightarrow$ Surabaya | EXPRESS | `OUT_FOR_DELIVERY` (Sedang Diantar) | Kurir sedang mengantar paket ke alamat penerima di Surabaya. |
+| **`NEX-554201`** | Bandung $\rightarrow$ Medan | REGULAR | `DELIVERED` (Terkirim) | Paket telah diterima oleh penerima langsung lengkap dengan riwayat 7 checkpoint. |
+| **`NEX-109283`** | Jakarta $\rightarrow$ Denpasar | CARGO | `IN_TRANSIT` (Dalam Perjalanan) | Pengiriman kargo pallet berat 25 Kg dalam perjalanan tol Trans-Jawa. |
 
-Rancangan basis data menggunakan SQLite dan Prisma ORM. Entitas utama yang digunakan adalah:
+---
 
-- **User:** menyimpan data pengguna beserta role, seperti admin, petugas operasional, owner, dan konsumen.
-- **Shipment:** menyimpan data paket, nomor resi, data pengirim dan penerima, dimensi, berat, layanan, tarif, serta status terkini.
-- **TrackingEvent:** menyimpan riwayat perubahan status, lokasi checkpoint, keterangan, dan waktu pembaruan.
-- **PriceRate:** menyimpan tarif berdasarkan kota asal, kota tujuan, jenis layanan, tarif per kilogram, dan estimasi durasi.
+## 9. URL Rute Halaman Aplikasi
 
-## 13. Data Demo dan Skenario Pengujian
-
-Untuk mendukung demonstrasi aplikasi, sistem dapat menggunakan data resi berikut:
-
-| Nomor AWB | Rute | Layanan | Status Skenario |
-| :--- | :--- | :--- | :--- |
-| `NEX-882910` | Jakarta -> Surabaya | Express | Sedang diantar |
-| `NEX-554201` | Bandung -> Medan | Regular | Terkirim |
-| `NEX-109283` | Jakarta -> Denpasar | Cargo | Dalam perjalanan |
-
-Data tersebut digunakan untuk menguji halaman cek resi, tampilan timeline, perubahan status, dan perbedaan layanan pengiriman.
-
-## 14. Cara Menjalankan Aplikasi Secara Lokal
-
-### Prasyarat
-
-- Node.js versi 18 atau lebih baru; versi 20, 22, atau 24 direkomendasikan.
-- npm, yarn, atau pnpm.
-
-### Langkah Instalasi
-
-```bash
-npm install
-npx prisma db push
-npx prisma db seed
-npm run dev
-```
-
-Setelah server berjalan, buka [http://localhost:3000](http://localhost:3000) melalui browser.
-
-## 15. Rute Halaman Utama
-
-- **Beranda:** `http://localhost:3000/`
-- **Pencarian resi:** `http://localhost:3000/track`
-- **Detail resi demo:** `http://localhost:3000/track/NEX-882910`
-- **Kalkulator ongkir:** `http://localhost:3000/rates`
-- **Portal konsumen:** `http://localhost:3000/dashboard/customer`
-- **Portal operasional:** `http://localhost:3000/dashboard/courier`
-- **Dashboard admin:** `http://localhost:3000/dashboard/admin`
-
-Rute dan fitur teknis pada bagian ini menjadi acuan implementasi apabila seluruh modul aplikasi dikembangkan. Prioritas penyelesaian tetap mengikuti fitur inti, batasan proyek, dan kriteria keberhasilan yang telah ditetapkan pada bagian sebelumnya.
+- **Beranda & Alat Cepat**: `http://localhost:3000/`
+- **Pencarian Lacak Resi**: `http://localhost:3000/track`
+- **Detail Lacak Resi Sampel**: `http://localhost:3000/track/NEX-882910`
+- **Kalkulator & Matriks Ongkir**: `http://localhost:3000/rates`
+- **Portal Pelanggan (Customer)**: `http://localhost:3000/dashboard/customer`
+- **Portal Kurir & Hub (Scanner)**: `http://localhost:3000/dashboard/courier`
+- **Dashboard Admin & Analitik**: `http://localhost:3000/dashboard/admin`
