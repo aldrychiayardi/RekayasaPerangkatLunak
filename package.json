@@ -1,0 +1,49 @@
+{
+  "name": "nusantara-express",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint",
+    "api:dev": "npm run build --workspace=@lecturer-github-tracker/shared && npm run dev --workspace=@lecturer-github-tracker/api",
+    "tracker:build": "npm run build --workspace=@lecturer-github-tracker/shared && npm run build --workspace=@lecturer-github-tracker/api",
+    "tracker:db:generate": "npm run prisma:generate --workspace=@lecturer-github-tracker/api",
+    "tracker:db:migrate": "npm run prisma:migrate --workspace=@lecturer-github-tracker/api",
+    "tracker:db:seed": "npm run prisma:seed --workspace=@lecturer-github-tracker/api"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
+    "jsbarcode": "^3.12.3",
+    "lucide-react": "^1.45.0",
+    "next": "15.5.25",
+    "qrcode.react": "^4.2.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.25",
+    "prisma": "^6.4.1",
+    "tailwindcss": "^4",
+    "tsx": "^4.19.3",
+    "typescript": "^5",
+    "@types/jsbarcode": "^3.11.4"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

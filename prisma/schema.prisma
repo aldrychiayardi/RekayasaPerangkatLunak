@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum Role {
+  ADMIN
+  COURIER
+  CUSTOMER
+}
+
+enum ServiceType {
+  REGULAR
+  EXPRESS
+  CARGO
+}
+
+enum ShipmentStatus {
+  ORDER_CREATED
+  PICKED_UP
+  AT_ORIGIN_HUB
+  IN_TRANSIT
+  AT_DESTINATION_HUB
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String   @default("CUSTOMER") // ADMIN | COURIER | CUSTOMER
+  createdAt DateTime @default(now())
+}
+
+model Shipment {
+  id               String          @id @default(cuid())
+  trackingNumber   String          @unique
+  senderName       String
+  senderPhone      String
+  senderCity       String
+  senderAddress    String
+  receiverName     String
+  receiverPhone    String
+  receiverCity     String
+  receiverAddress  String
+  weight           Float           // in kg
+  length           Float           // in cm
+  width            Float           // in cm
+  height           Float           // in cm
+  chargeableWeight Float           // in kg = max(weight, (l*w*h)/6000)
+  serviceType      String          // REGULAR | EXPRESS | CARGO
+  totalCost        Float           // IDR
+  status           String          @default("ORDER_CREATED") // ShipmentStatus
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  events           TrackingEvent[]
+}
+
+model TrackingEvent {
+  id          String   @id @default(cuid())
+  shipmentId  String
+  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  status      String   // ShipmentStatus
+  location    String   // e.g., "Sorting Hub Jakarta Barat"
+  description String   // e.g., "Paket telah diterima di Hub Asal"
+  timestamp   DateTime @default(now())
+
+  @@index([shipmentId])
+}
+
+model PriceRate {
+  id              String @id @default(cuid())
+  originCity      String
+  destinationCity String
+  serviceType     String // REGULAR | EXPRESS | CARGO
+  ratePerKg       Float  // IDR per kg
+  estimatedDays   String // e.g. "1-2 Hari"
+
+  @@unique([originCity, destinationCity, serviceType])
+  @@index([originCity, destinationCity])
+}
