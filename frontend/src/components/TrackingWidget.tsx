@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Search, Loader2, ArrowRight, MapPin, Clock } from "lucide-react";
 import { getShipmentByAwb } from "@/actions/shipment-actions";
-import { STATUS_MAP, formatIndonesianDate } from "@/lib/utils";
+import { STATUS_MAP, formatIndonesianDate, getServiceLabel } from "@/lib/utils";
 import Link from "next/link";
 
 interface TrackingWidgetProps {
@@ -131,7 +131,7 @@ export function TrackingWidget({ initialAwb = "", className = "" }: TrackingWidg
                 {result.trackingNumber}
               </span>
               <span className="text-xs font-semibold px-2 py-0.5 bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 rounded">
-                {result.serviceType}
+                {getServiceLabel(result.serviceType)}
               </span>
             </div>
             {STATUS_MAP[result.status] && (

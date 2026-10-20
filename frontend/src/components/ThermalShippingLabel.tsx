@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { BarcodeGenerator } from "./BarcodeGenerator";
 import { QRCodeSVG } from "qrcode.react";
 import { Printer, X, Box, Phone, MapPin } from "lucide-react";
-import { formatIndonesianDate, getCityHubCode, formatIDR } from "@/lib/utils";
+import { formatIndonesianDate, getCityHubCode, formatIDR, getServiceLabel } from "@/lib/utils";
 
 export interface ShipmentLabelData {
   trackingNumber: string;
@@ -73,7 +73,7 @@ export function ThermalShippingLabel({
             </div>
           </div>
           <div className="border-2 border-black px-2.5 py-1 text-center bg-neutral-100 font-black text-xs tracking-wider uppercase rounded-sm">
-            {shipment.serviceType}
+            {getServiceLabel(shipment.serviceType)}
           </div>
         </div>
 

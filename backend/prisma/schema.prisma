@@ -11,6 +11,7 @@ datasource db {
 }
 
 enum Role {
+  OWNER
   ADMIN
   COURIER
   CUSTOMER
@@ -18,8 +19,7 @@ enum Role {
 
 enum ServiceType {
   REGULAR
-  EXPRESS
-  CARGO
+  VEHICLE
 }
 
 enum ShipmentStatus {
@@ -34,16 +34,20 @@ enum ShipmentStatus {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
-  email     String   @unique
-  role      String   @default("CUSTOMER") // ADMIN | COURIER | CUSTOMER
-  createdAt DateTime @default(now())
+  email     String     @unique
+  password  String
+  role      String     @default("CUSTOMER") // OWNER | ADMIN | COURIER | CUSTOMER
+  createdAt DateTime   @default(now())
+  shipments Shipment[]
 }
 
 model Shipment {
   id               String          @id @default(cuid())
   trackingNumber   String          @unique
+  userId           String?
+  user             User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
   senderName       String
   senderPhone      String
   senderCity       String
@@ -57,12 +61,14 @@ model Shipment {
   width            Float           // in cm
   height           Float           // in cm
   chargeableWeight Float           // in kg = max(weight, (l*w*h)/6000)
-  serviceType      String          // REGULAR | EXPRESS | CARGO
+  serviceType      String          // REGULAR | VEHICLE
   totalCost        Float           // IDR
   status           String          @default("ORDER_CREATED") // ShipmentStatus
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   events           TrackingEvent[]
+
+  @@index([userId])
 }
 
 model TrackingEvent {
@@ -81,8 +87,8 @@ model PriceRate {
   id              String @id @default(cuid())
   originCity      String
   destinationCity String
-  serviceType     String // REGULAR | EXPRESS | CARGO
-  ratePerKg       Float  // IDR per kg
+  serviceType     String // REGULAR | VEHICLE
+  ratePerKg       Float  // IDR per kg for REGULAR; IDR per vehicle unit for VEHICLE
   estimatedDays   String // e.g. "1-2 Hari"
 
   @@unique([originCity, destinationCity, serviceType])

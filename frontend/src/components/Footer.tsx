@@ -114,7 +114,7 @@ export function Footer() {
             <div className="flex items-start gap-2.5 text-sm text-slate-400">
               <MapPin className="w-4 h-4 text-orange-500 mt-1 shrink-0" />
               <div className="text-xs">
-                NEX Central Gateway: Jl. Daan Mogot KM 12 No. 88, Jakarta Barat 11840
+                NEX Central Gateway: Pontianak, Kalimantan Barat
               </div>
             </div>
           </div>

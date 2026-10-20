@@ -1,15 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 export interface RateCalculationResult {
   volumetricWeight: number;
   actualWeight: number;
   chargeableWeight: number;
   services: {
-    serviceType: "REGULAR" | "EXPRESS" | "CARGO";
+    serviceType: "REGULAR" | "VEHICLE";
     serviceName: string;
-    ratePerKg: number;
+    rateAmount: number;
+    rateUnit: "kg" | "unit";
     totalCost: number;
     estimatedDays: string;
     description: string;
@@ -68,7 +70,8 @@ export interface RateRecord {
 
 export interface AdminMetrics {
   totalShipments: number;
-  totalRevenue: number;
+  totalRevenue: number | null;
+  isOwner?: boolean;
   activeInTransit: number;
   deliveredCount: number;
   deliveryPercentage: number;
@@ -87,7 +90,7 @@ export interface CreateShipmentInput {
   length: number;
   width: number;
   height: number;
-  serviceType: "REGULAR" | "EXPRESS" | "CARGO";
+  serviceType: "REGULAR" | "VEHICLE";
 }
 
 class ApiRequestError extends Error {
@@ -104,12 +107,21 @@ async function requestApi<T>(path: string, init?: RequestInit): Promise<T> {
   const baseUrl = (process.env.API_BASE_URL ?? "http://localhost:4000").replace(/\/+$/, "");
   let response: Response;
 
+  let token: string | undefined;
+  try {
+    const cookieStore = await cookies();
+    token = cookieStore.get("auth_token")?.value;
+  } catch {
+    // cookies() might not be available in non-request contexts
+  }
+
   try {
     response = await fetch(`${baseUrl}/api${path}`, {
       ...init,
       cache: "no-store",
       headers: {
         ...(init?.body ? { "Content-Type": "application/json" } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init?.headers
       }
     });

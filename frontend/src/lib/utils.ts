@@ -27,32 +27,45 @@ export function formatShortDate(date: Date | string | number): string {
 
 export function getCityHubCode(city: string): string {
   const codes: Record<string, string> = {
-    Jakarta: "CGK",
-    Surabaya: "SUB",
-    Bandung: "BDO",
-    Medan: "KNO",
-    Makassar: "UPG",
-    Denpasar: "DPS",
-    Semarang: "SRG",
-    Palembang: "PLM",
-    Balikpapan: "BPN",
-    Yogyakarta: "JOG",
+    Pontianak: "PNK",
+    "Kubu Raya": "KUB",
+    "Sungai Pinyuh": "SPY",
+    Anjongan: "ANJ",
+    Toho: "TOH",
+    Menjalin: "MEN",
+    Karangan: "KAR",
+    Seluas: "SEL",
   };
   return codes[city] || city.substring(0, 3).toUpperCase();
 }
 
-export const INDONESIAN_CITIES = [
-  "Jakarta",
-  "Surabaya",
-  "Bandung",
-  "Medan",
-  "Makassar",
-  "Denpasar",
-  "Semarang",
-  "Palembang",
-  "Balikpapan",
-  "Yogyakarta",
-];
+export const ORIGIN_CITY = "Pontianak";
+
+export const DESTINATION_LOCATIONS = [
+  { value: "Kubu Raya", label: "Kabupaten Kubu Raya" },
+  { value: "Sungai Pinyuh", label: "Sungai Pinyuh — Kabupaten Mempawah" },
+  { value: "Anjongan", label: "Anjongan — Kabupaten Mempawah" },
+  { value: "Toho", label: "Toho — Kabupaten Landak" },
+  { value: "Menjalin", label: "Menjalin — Kabupaten Landak" },
+  { value: "Karangan", label: "Karangan — Kabupaten Landak" },
+  { value: "Seluas", label: "Seluas — Kabupaten Bengkayang" },
+] as const;
+
+export const DESTINATION_CITIES = DESTINATION_LOCATIONS.map(({ value }) => value);
+
+export function getLocationLabel(city: string): string {
+  return DESTINATION_LOCATIONS.find((location) => location.value === city)?.label ?? city;
+}
+
+export function getServiceLabel(serviceType: string): string {
+  const labels: Record<string, string> = {
+    REGULAR: "REGULER",
+    VEHICLE: "KENDARAAN",
+    EXPRESS: "EXPRESS",
+    CARGO: "KARGO",
+  };
+  return labels[serviceType] ?? serviceType;
+}
 
 export const STATUS_MAP: Record<
   string,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   STATUS_MAP,
   formatIndonesianDate,
+  getServiceLabel,
 } from "@/lib/utils";
 import {
   addTrackingEvent,
@@ -41,15 +42,14 @@ interface CourierClientProps {
 }
 
 const LOCATION_PRESETS = [
-  "Sorting Hub Jakarta Barat (CGK-01)",
-  "Gateway Kargo Udara Soekarno-Hatta (CGK)",
-  "Hub Distribusi Surabaya Timur (SUB-01)",
-  "Drop Point Gubeng Surabaya",
-  "Sorting Center Gedebage Bandung (BDO-01)",
-  "Gateway Kualanamu Medan (KNO-01)",
-  "Drop Point Medan Maimun",
-  "Hub Logistik Denpasar (DPS-01)",
-  "Drop Point Canggu Badung",
+  "Pontianak — Titik Awal",
+  "Kabupaten Kubu Raya",
+  "Sungai Pinyuh — Kabupaten Mempawah",
+  "Anjongan — Kabupaten Mempawah",
+  "Toho — Kabupaten Landak",
+  "Menjalin — Kabupaten Landak",
+  "Karangan — Kabupaten Landak",
+  "Seluas — Kabupaten Bengkayang",
 ];
 
 const REMARK_PRESETS: Record<string, string[]> = {
@@ -62,9 +62,9 @@ const REMARK_PRESETS: Record<string, string[]> = {
     "Paket selesai disortir dan dimasukkan ke kantong logistik utama.",
   ],
   IN_TRANSIT: [
-    "Paket dalam perjalanan darat lintas tol Trans-Jawa.",
-    "Paket diterbangkan via penerbangan kargo udara komersial.",
-    "Paket berlayar via kapal ekspedisi rute antar-pulau.",
+    "Paket sedang dalam perjalanan melalui rute Pontianak menuju Seluas.",
+    "Paket sedang melewati jalur Anjongan menuju Kabupaten Landak.",
+    "Paket sedang menuju Kabupaten Bengkayang melalui jalur darat.",
   ],
   AT_DESTINATION_HUB: [
     "Paket tiba di Hub Sortir Tujuan dan siap dibagikan ke drop point.",
@@ -97,7 +97,7 @@ export function CourierClient({ recentEvents, sampleAwbs }: CourierClientProps) 
 
   // Update Form State
   const [status, setStatus] = useState("OUT_FOR_DELIVERY");
-  const [location, setLocation] = useState("Drop Point Gubeng Surabaya");
+  const [location, setLocation] = useState("Pontianak — Titik Awal");
   const [description, setDescription] = useState(
     "Kurir NEX (Rian Saputra) sedang membawa paket ke alamat penerima."
   );
@@ -296,7 +296,7 @@ export function CourierClient({ recentEvents, sampleAwbs }: CourierClientProps) 
                 </div>
 
                 <div className="text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-700 pt-1.5 flex justify-between">
-                  <span>Layanan: {currentShipment.serviceType}</span>
+                  <span>Layanan: {getServiceLabel(currentShipment.serviceType)}</span>
                   <span>Berat: {currentShipment.chargeableWeight} Kg</span>
                 </div>
 
@@ -376,7 +376,7 @@ export function CourierClient({ recentEvents, sampleAwbs }: CourierClientProps) 
                 required
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="Contoh: Sorting Hub Jakarta Barat (CGK-01)"
+                placeholder="Contoh: Anjongan — Kabupaten Mempawah"
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 mb-2"
               />
 

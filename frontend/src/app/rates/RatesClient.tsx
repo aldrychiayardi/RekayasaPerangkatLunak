@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { INDONESIAN_CITIES, formatIDR } from "@/lib/utils";
+import {
+  DESTINATION_LOCATIONS,
+  ORIGIN_CITY,
+  getLocationLabel,
+  getServiceLabel,
+  formatIDR,
+} from "@/lib/utils";
 import { RateCalculatorWidget } from "@/components/RateCalculatorWidget";
 import { Calculator, Layers } from "lucide-react";
 
@@ -58,7 +64,7 @@ export function RatesClient({ initialRates }: RatesClientProps) {
               </h3>
             </div>
             <p className="text-xs text-slate-500">
-              Daftar tarif dasar per kilogram untuk seluruh rute kota besar di Indonesia.
+              Daftar rute pengiriman dari Pontianak melalui Anjongan hingga Seluas.
             </p>
           </div>
 
@@ -70,11 +76,7 @@ export function RatesClient({ initialRates }: RatesClientProps) {
               className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="ALL">Semua Kota Asal</option>
-              {INDONESIAN_CITIES.map((c) => (
-                <option key={`orig-${c}`} value={c}>
-                  Asal: {c}
-                </option>
-              ))}
+              <option value={ORIGIN_CITY}>Asal: {ORIGIN_CITY}</option>
             </select>
 
             <select
@@ -83,9 +85,9 @@ export function RatesClient({ initialRates }: RatesClientProps) {
               className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="ALL">Semua Kota Tujuan</option>
-              {INDONESIAN_CITIES.map((c) => (
-                <option key={`dest-${c}`} value={c}>
-                  Tujuan: {c}
+              {DESTINATION_LOCATIONS.map(({ value, label }) => (
+                <option key={`dest-${value}`} value={value}>
+                  Tujuan: {label}
                 </option>
               ))}
             </select>
@@ -96,9 +98,8 @@ export function RatesClient({ initialRates }: RatesClientProps) {
               className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="ALL">Semua Layanan</option>
-              <option value="EXPRESS">EXPRESS</option>
-              <option value="REGULAR">REGULAR</option>
-              <option value="CARGO">CARGO</option>
+              <option value="REGULAR">REGULER</option>
+              <option value="VEHICLE">KENDARAAN</option>
             </select>
           </div>
         </div>
@@ -111,7 +112,7 @@ export function RatesClient({ initialRates }: RatesClientProps) {
                 <th className="px-4 py-3">Kota Asal</th>
                 <th className="px-4 py-3">Kota Tujuan</th>
                 <th className="px-4 py-3">Layanan</th>
-                <th className="px-4 py-3 text-right">Tarif / Kg</th>
+                <th className="px-4 py-3 text-right">Tarif</th>
                 <th className="px-4 py-3">Estimasi Waktu</th>
               </tr>
             </thead>
@@ -124,36 +125,35 @@ export function RatesClient({ initialRates }: RatesClientProps) {
                 </tr>
               ) : (
                 filteredRates.slice(0, 50).map((rate) => {
-                  const isExpress = rate.serviceType === "EXPRESS";
-                  const isCargo = rate.serviceType === "CARGO";
+                  const isVehicle = rate.serviceType === "VEHICLE";
 
                   return (
                     <tr
                       key={rate.id}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition duration-150"
                     >
-                      <td className="px-4 py-3 font-bold">{rate.originCity}</td>
+                      <td className="px-4 py-3 font-bold">                      {ORIGIN_CITY}</td>
                       <td className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">
-                        {rate.destinationCity}
+                        {getLocationLabel(rate.destinationCity)}
                       </td>
                       <td className="px-4 py-3">
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
-                            isExpress
-                              ? "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400"
-                              : isCargo
+                            isVehicle
                               ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400"
                               : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
                           }`}
                         >
-                          {rate.serviceType}
+                          {getServiceLabel(rate.serviceType)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-bold text-orange-600 dark:text-orange-400">
-                        {formatIDR(rate.ratePerKg)}
+                        {formatIDR(rate.ratePerKg)}/{isVehicle ? "unit" : "kg"}
                       </td>
                       <td className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400">
-                        {rate.estimatedDays}
+                        {rate.estimatedDays === "Belum ditentukan"
+                          ? "Belum diatur"
+                          : rate.estimatedDays}
                       </td>
                     </tr>
                   );

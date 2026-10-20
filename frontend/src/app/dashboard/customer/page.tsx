@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { getAllShipments } from "@/actions/shipment-actions";
+import { getCurrentUser } from "@/actions/auth-actions";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CustomerClient } from "./CustomerClient";
@@ -7,6 +9,12 @@ import { PackageCheck } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function CustomerDashboardPage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login?redirect=/dashboard/customer");
+  }
+
   const shipments = await getAllShipments();
 
   return (
@@ -21,10 +29,10 @@ export default async function CustomerDashboardPage() {
               Customer Portal
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              Portal Pengiriman Pelanggan
+              Halo, {user.name} 👋
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Buat pengiriman paket baru, cetak thermal waybill 100mm x 150mm ber-barcode, dan pantau status paket Anda secara mandiri.
+              Buat pesanan pengiriman paket baru, cetak label thermal waybill ber-barcode, dan pantau status paket Anda secara mandiri.
             </p>
           </div>
 

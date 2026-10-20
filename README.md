@@ -49,7 +49,9 @@ README.md
 | `/dashboard/courier` | Mencari AWB dan mencatat status, lokasi, serta keterangan paket |
 | `/dashboard/admin` | Melihat metrik pengiriman dan mengubah tarif |
 
-Kalkulasi berat volumetrik menggunakan `panjang × lebar × tinggi / 6000`. Berat tagihan membandingkan berat aktual dengan berat volumetrik. Pilihan layanan adalah NEX Express, NEX Regular, dan NEX Cargo; layanan Cargo memiliki berat minimum 10 kg. Label paket menyediakan barcode dan QR code.
+Rute operasional aplikasi dibatasi dari Pontianak menuju Kabupaten Kubu Raya, Sungai Pinyuh, Anjongan, Toho, Menjalin, Karangan, dan Seluas melalui Anjongan. Tarif default adalah Rp12.000/kg untuk pengiriman reguler dan Rp200.000/unit untuk pengiriman kendaraan. Owner dapat menyesuaikan tarif dan estimasi melalui dashboard admin.
+
+Kalkulasi berat volumetrik untuk layanan reguler menggunakan `panjang × lebar × tinggi / 6000`; berat tagihan membandingkan berat aktual dengan berat volumetrik. Pilihan layanan saat ini adalah Reguler dan Kendaraan. Tarif Reguler dihitung berdasarkan berat tagihan, sedangkan tarif Kendaraan dihitung per unit. Label pengiriman menyediakan barcode dan QR code.
 
 Aplikasi ini merupakan simulasi lokal. Data checkpoint, lokasi hub, tarif, serta kiriman contoh tidak terhubung dengan armada, GPS, atau penyedia ekspedisi eksternal.
 
@@ -70,13 +72,21 @@ npm run db:push
 npm run db:seed
 ```
 
-Database SQLite akan dibuat di `backend/prisma/dev.db`. Perintah seed mengisi matriks tarif untuk 10 kota Indonesia dan tiga kiriman demo:
+Database SQLite akan dibuat di `backend/prisma/dev.db`. Perintah seed mengisi tarif awal untuk rute Pontianak dan tiga kiriman demo:
 
-- `NEX-882910` — Jakarta ke Surabaya, Express
-- `NEX-554201` — Bandung ke Medan, Regular
-- `NEX-109283` — Jakarta ke Denpasar, Cargo
+- `NEX-882910` — Pontianak ke Seluas, Reguler
+- `NEX-554201` — Pontianak ke Kubu Raya, Reguler
+- `NEX-109283` — Pontianak ke Anjongan, Kendaraan
 
 > Seed mengosongkan tabel data sebelum membuat ulang data demo. Jangan jalankan jika ingin mempertahankan perubahan data lokal.
+
+Untuk menambahkan rute koridor ke database yang sudah ada tanpa menghapus pengguna, kiriman, riwayat tracking, atau tarif tersimpan, jalankan:
+
+```powershell
+npm run db:routes
+```
+
+Perintah ini hanya menambahkan tarif yang belum ada untuk Pontianak ke tujuh tujuan layanan. Tarif baru menggunakan nilai default Rp12.000/kg untuk Reguler dan Rp200.000/unit untuk Kendaraan; Owner dapat menyesuaikannya melalui dashboard admin.
 
 ## Menjalankan aplikasi
 
@@ -146,3 +156,4 @@ Untuk mengubah alamat API yang dipanggil frontend, atur `API_BASE_URL` di lingku
 | `npm run db:generate` | Membuat Prisma Client |
 | `npm run db:push` | Menyelaraskan schema dengan SQLite lokal |
 | `npm run db:seed` | Membuat ulang data demonstrasi |
+| `npm run db:routes` | Menambahkan rute Pontianak tanpa menghapus data lain |

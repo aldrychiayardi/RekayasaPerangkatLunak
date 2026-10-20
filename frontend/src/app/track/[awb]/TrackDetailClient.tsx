@@ -7,6 +7,7 @@ import {
   formatIDR,
   formatIndonesianDate,
   getCityHubCode,
+  getServiceLabel,
 } from "@/lib/utils";
 import { TrackingTimeline, TrackingEventItem } from "@/components/TrackingTimeline";
 import { ThermalShippingLabel, ShipmentLabelData } from "@/components/ThermalShippingLabel";
@@ -68,7 +69,7 @@ export function TrackDetailClient({ shipment }: TrackDetailClientProps) {
                 {shipment.trackingNumber}
               </h1>
               <span className="text-xs font-extrabold uppercase px-2.5 py-1 rounded bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-400">
-                {shipment.serviceType}
+                {getServiceLabel(shipment.serviceType)}
               </span>
               <span
                 className={`text-xs font-bold px-3 py-1 rounded-full border ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}`}

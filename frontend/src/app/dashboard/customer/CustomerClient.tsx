@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import {
-  INDONESIAN_CITIES,
+  ORIGIN_CITY,
+  DESTINATION_LOCATIONS,
   STATUS_MAP,
   formatIDR,
+  getServiceLabel,
 } from "@/lib/utils";
 import {
   createShipmentOrder,
@@ -43,21 +45,22 @@ export function CustomerClient({ initialShipments }: CustomerClientProps) {
   // Form states
   const [senderName, setSenderName] = useState("Budi Santoso");
   const [senderPhone, setSenderPhone] = useState("081288990011");
-  const [senderCity, setSenderCity] = useState("Jakarta");
-  const [senderAddress, setSenderAddress] = useState("Jl. Kebon Jeruk Raya No. 15, Jakarta Barat");
+  const senderCity = ORIGIN_CITY;
+  const [senderAddress, setSenderAddress] = useState("");
 
   const [receiverName, setReceiverName] = useState("");
   const [receiverPhone, setReceiverPhone] = useState("");
-  const [receiverCity, setReceiverCity] = useState("Surabaya");
+  const [receiverCity, setReceiverCity] = useState("Seluas");
   const [receiverAddress, setReceiverAddress] = useState("");
 
   const [weight, setWeight] = useState(1.5);
   const [length, setLength] = useState(25);
   const [width, setWidth] = useState(20);
   const [height, setHeight] = useState(15);
-  const [serviceType, setServiceType] = useState<"REGULAR" | "EXPRESS" | "CARGO">("REGULAR");
+  const [serviceType, setServiceType] = useState<"REGULAR" | "VEHICLE">("REGULAR");
 
   const [estimatedCost, setEstimatedCost] = useState<number>(0);
+  const [estimateError, setEstimateError] = useState<string | null>(null);
   const [volumetricWeight, setVolumetricWeight] = useState<number>(0);
   const [chargeableWeight, setChargeableWeight] = useState<number>(0);
 
@@ -86,13 +89,19 @@ export function CustomerClient({ initialShipments }: CustomerClientProps) {
         if (!isCancelled) {
           setVolumetricWeight(rates.volumetricWeight);
           setChargeableWeight(rates.chargeableWeight);
+          setEstimateError(null);
           const matchedService = rates.services.find((s) => s.serviceType === serviceType);
           if (matchedService) {
             setEstimatedCost(matchedService.totalCost);
           }
         }
       } catch (err) {
-        console.error("Calculation error:", err);
+        if (!isCancelled) {
+          setEstimatedCost(0);
+          setEstimateError(
+            err instanceof Error ? err.message : "Estimasi ongkir belum tersedia."
+          );
+        }
       }
     }
     updateEstimate();
@@ -248,11 +257,27 @@ export function CustomerClient({ initialShipments }: CustomerClientProps) {
               <span className="text-[10px] uppercase font-bold text-slate-400 block">
                 Estimasi Total Biaya
               </span>
-              <span className="text-xl font-black text-orange-600 dark:text-orange-400 font-mono">
-                {formatIDR(estimatedCost)}
-              </span>
+              {estimateError ? (
+                <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                  Tarif belum diatur
+                </span>
+              ) : (
+                <span className="text-xl font-black text-orange-600 dark:text-orange-400 font-mono">
+                  {formatIDR(estimatedCost)}
+                </span>
+              )}
             </div>
           </div>
+
+          {estimateError && (
+            <div
+              role="alert"
+              className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl text-xs text-amber-800 dark:text-amber-300 font-medium flex items-center gap-2"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{estimateError}</span>
+            </div>
+          )}
 
           {formError && (
             <div className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl text-xs text-red-700 dark:text-red-300 font-medium flex items-center gap-2">
@@ -301,17 +326,12 @@ export function CustomerClient({ initialShipments }: CustomerClientProps) {
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">
                   Kota Asal *
                 </label>
-                <select
+                <input
+                  type="text"
                   value={senderCity}
-                  onChange={(e) => setSenderCity(e.target.value)}
+                  readOnly
                   className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                >
-                  {INDONESIAN_CITIES.map((c) => (
-                    <option key={`orig-form-${c}`} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>
@@ -374,9 +394,9 @@ export function CustomerClient({ initialShipments }: CustomerClientProps) {
                   onChange={(e) => setReceiverCity(e.target.value)}
                   className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
-                  {INDONESIAN_CITIES.map((c) => (
-                    <option key={`dest-form-${c}`} value={c}>
-                      {c}
+                  {DESTINATION_LOCATIONS.map(({ value, label }) => (
+                    <option key={`dest-form-${value}`} value={value}>
+                      {label}
                     </option>
                   ))}
                 </select>
@@ -464,11 +484,11 @@ export function CustomerClient({ initialShipments }: CustomerClientProps) {
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 pt-1">
               <span>Volumetrik: <strong>{volumetricWeight} Kg</strong> | Berat Dikenakan: <strong className="text-orange-600">{chargeableWeight} Kg</strong></span>
-              <span className="text-[11px] italic">*Layanan CARGO dikenakan berat minimum 10 Kg</span>
+              <span className="text-[11px] italic">Tarif reguler dihitung per kg; pengiriman kendaraan dihitung per unit.</span>
             </div>
 
             {/* Service Type Radios */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <label
                 className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
                   serviceType === "REGULAR"
@@ -485,14 +505,14 @@ export function CustomerClient({ initialShipments }: CustomerClientProps) {
                   className="mt-1"
                 />
                 <div>
-                  <div className="font-black text-xs text-slate-900 dark:text-white">NEX REGULAR</div>
-                  <div className="text-[11px] text-slate-500">2-3 Hari Kerja</div>
+                  <div className="font-black text-xs text-slate-900 dark:text-white">REGULER</div>
+                  <div className="text-[11px] text-slate-500">Rp12.000/kg</div>
                 </div>
               </label>
 
               <label
                 className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
-                  serviceType === "EXPRESS"
+                  serviceType === "VEHICLE"
                     ? "border-orange-500 bg-orange-50 dark:bg-orange-950/40 ring-2 ring-orange-500"
                     : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 }`}
@@ -500,35 +520,14 @@ export function CustomerClient({ initialShipments }: CustomerClientProps) {
                 <input
                   type="radio"
                   name="service"
-                  value="EXPRESS"
-                  checked={serviceType === "EXPRESS"}
-                  onChange={() => setServiceType("EXPRESS")}
+                  value="VEHICLE"
+                  checked={serviceType === "VEHICLE"}
+                  onChange={() => setServiceType("VEHICLE")}
                   className="mt-1"
                 />
                 <div>
-                  <div className="font-black text-xs text-slate-900 dark:text-white">NEX EXPRESS</div>
-                  <div className="text-[11px] text-slate-500">1-2 Hari (Next Day)</div>
-                </div>
-              </label>
-
-              <label
-                className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
-                  serviceType === "CARGO"
-                    ? "border-orange-500 bg-orange-50 dark:bg-orange-950/40 ring-2 ring-orange-500"
-                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="service"
-                  value="CARGO"
-                  checked={serviceType === "CARGO"}
-                  onChange={() => setServiceType("CARGO")}
-                  className="mt-1"
-                />
-                <div>
-                  <div className="font-black text-xs text-slate-900 dark:text-white">NEX CARGO</div>
-                  <div className="text-[11px] text-slate-500">3-5 Hari (Min. 10 Kg)</div>
+                  <div className="font-black text-xs text-slate-900 dark:text-white">KENDARAAN</div>
+                  <div className="text-[11px] text-slate-500">Rp200.000/unit kendaraan</div>
                 </div>
               </label>
             </div>
@@ -640,7 +639,7 @@ export function CustomerClient({ initialShipments }: CustomerClientProps) {
                         </td>
                         <td className="px-4 py-3">
                           <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800">
-                            {s.serviceType}
+                            {getServiceLabel(s.serviceType)}
                           </span>
                         </td>
                         <td className="px-4 py-3">

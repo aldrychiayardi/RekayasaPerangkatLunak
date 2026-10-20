@@ -4,11 +4,15 @@ import { useState } from "react";
 import {
   STATUS_MAP,
   formatIDR,
-  INDONESIAN_CITIES,
+  ORIGIN_CITY,
+  DESTINATION_LOCATIONS,
+  getLocationLabel,
+  getServiceLabel,
 } from "@/lib/utils";
 import { updateRate } from "@/actions/shipment-actions";
 import { ThermalShippingLabel, ShipmentLabelData } from "@/components/ThermalShippingLabel";
 import { RateItem } from "@/app/rates/RatesClient";
+import type { AuthUser } from "@/actions/auth-actions";
 import Link from "next/link";
 import {
   Package,
@@ -23,6 +27,7 @@ import {
   ArrowRight,
   Loader2,
   Percent,
+  Lock,
 } from "lucide-react";
 
 export type AdminShipmentItem = ShipmentLabelData & {
@@ -31,9 +36,11 @@ export type AdminShipmentItem = ShipmentLabelData & {
 };
 
 interface AdminClientProps {
+  currentUser: AuthUser;
   metrics: {
     totalShipments: number;
-    totalRevenue: number;
+    totalRevenue: number | null;
+    isOwner?: boolean;
     activeInTransit: number;
     deliveredCount: number;
     deliveryPercentage: number;
@@ -43,10 +50,12 @@ interface AdminClientProps {
 }
 
 export function AdminClient({
+  currentUser,
   metrics,
   initialShipments,
   initialRates,
 }: AdminClientProps) {
+  const isOwner = currentUser.role === "OWNER";
   const [activeTab, setActiveTab] = useState<"shipments" | "rates">("shipments");
 
   // Shipments filter states
@@ -137,15 +146,28 @@ export function AdminClient({
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Total Pendapatan (Revenue)
             </span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600">
-              <DollarSign className="w-4 h-4" />
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                isOwner
+                  ? "bg-emerald-100 dark:bg-emerald-950 flex text-emerald-600"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+              }`}
+            >
+              {isOwner ? <DollarSign className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-            {formatIDR(metrics.totalRevenue)}
-          </div>
+          {isOwner && metrics.totalRevenue !== null ? (
+            <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+              {formatIDR(metrics.totalRevenue)}
+            </div>
+          ) : (
+            <div className="text-sm font-bold text-slate-400 flex items-center gap-1.5 py-1">
+              <Lock className="w-4 h-4 text-slate-400" />
+              <span>Terkunci (Hanya Owner)</span>
+            </div>
+          )}
           <div className="text-[11px] text-slate-500 mt-1 font-medium">
-            Akumulasi transaksi ongkos kirim
+            {isOwner ? "Akumulasi transaksi ongkos kirim" : "Informasi omset rahasia perusahaan"}
           </div>
         </div>
 
@@ -261,9 +283,8 @@ export function AdminClient({
                 className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="ALL">Semua Layanan</option>
-                <option value="EXPRESS">EXPRESS</option>
-                <option value="REGULAR">REGULAR</option>
-                <option value="CARGO">CARGO</option>
+                <option value="REGULAR">REGULER</option>
+                <option value="VEHICLE">KENDARAAN</option>
               </select>
             </div>
           </div>
@@ -324,7 +345,7 @@ export function AdminClient({
                         </td>
                         <td className="px-4 py-3">
                           <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800">
-                            {s.serviceType}
+                            {getServiceLabel(s.serviceType)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -379,7 +400,9 @@ export function AdminClient({
                 Kelola Matriks Tarif Ongkos Kirim Antar Kota
               </h3>
               <p className="text-xs text-slate-500">
-                Klik ikon &quot;Edit&quot; pada baris rute untuk memperbarui tarif per-kg dan estimasi hari pengiriman langsung ke database.
+                {isOwner
+                  ? "Klik ikon Edit pada baris rute untuk memperbarui tarif per-kg dan estimasi hari pengiriman langsung ke database."
+                  : "Daftar tarif acuan pengiriman aktif (perubahan harga hanya dapat dilakukan oleh Owner)."}
               </p>
             </div>
 
@@ -390,11 +413,7 @@ export function AdminClient({
                 className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="ALL">Semua Kota Asal</option>
-                {INDONESIAN_CITIES.map((c) => (
-                  <option key={`admin-orig-${c}`} value={c}>
-                    Asal: {c}
-                  </option>
-                ))}
+                <option value={ORIGIN_CITY}>Asal: {ORIGIN_CITY}</option>
               </select>
 
               <select
@@ -403,14 +422,23 @@ export function AdminClient({
                 className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="ALL">Semua Kota Tujuan</option>
-                {INDONESIAN_CITIES.map((c) => (
-                  <option key={`admin-dest-${c}`} value={c}>
-                    Tujuan: {c}
+                {DESTINATION_LOCATIONS.map(({ value, label }) => (
+                  <option key={`admin-dest-${value}`} value={value}>
+                    Tujuan: {label}
                   </option>
                 ))}
               </select>
             </div>
           </div>
+
+          {!isOwner && (
+            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl flex items-center gap-3 text-xs text-amber-800 dark:text-amber-300 font-medium">
+              <Lock className="w-4 h-4 shrink-0 text-amber-600" />
+              <span>
+                <b>Mode Tinjau (Read-Only):</b> Anda login sebagai <b>Admin Operasional</b>. Hak untuk mengubah tarif ongkir per-kg antar kota dikunci khusus untuk akun <b>Owner</b>.
+              </span>
+            </div>
+          )}
 
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left text-xs">
@@ -419,7 +447,7 @@ export function AdminClient({
                   <th className="px-4 py-3">Kota Asal</th>
                   <th className="px-4 py-3">Kota Tujuan</th>
                   <th className="px-4 py-3">Layanan</th>
-                  <th className="px-4 py-3">Tarif / Kg (IDR)</th>
+                  <th className="px-4 py-3">Tarif (IDR)</th>
                   <th className="px-4 py-3">Estimasi Durasi</th>
                   <th className="px-4 py-3 text-right">Aksi</th>
                 </tr>
@@ -433,11 +461,13 @@ export function AdminClient({
                       key={r.id}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
                     >
-                      <td className="px-4 py-3 font-bold">{r.originCity}</td>
-                      <td className="px-4 py-3 font-semibold">{r.destinationCity}</td>
+                      <td className="px-4 py-3 font-bold">{ORIGIN_CITY}</td>
+                      <td className="px-4 py-3 font-semibold">
+                        {getLocationLabel(r.destinationCity)}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800">
-                          {r.serviceType}
+                          {getServiceLabel(r.serviceType)}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-mono">
@@ -450,7 +480,7 @@ export function AdminClient({
                           />
                         ) : (
                           <span className="font-bold text-orange-600 dark:text-orange-400">
-                            {formatIDR(r.ratePerKg)}
+                            {formatIDR(r.ratePerKg)}/{r.serviceType === "VEHICLE" ? "unit" : "kg"}
                           </span>
                         )}
                       </td>
@@ -464,7 +494,9 @@ export function AdminClient({
                           />
                         ) : (
                           <span className="text-slate-600 dark:text-slate-300 font-medium">
-                            {r.estimatedDays}
+                            {r.estimatedDays === "Belum ditentukan"
+                              ? "Belum diatur"
+                              : r.estimatedDays}
                           </span>
                         )}
                       </td>
@@ -491,7 +523,7 @@ export function AdminClient({
                               <X className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                        ) : (
+                        ) : isOwner ? (
                           <button
                             type="button"
                             onClick={() => handleStartEditRate(r)}
@@ -500,6 +532,14 @@ export function AdminClient({
                             <Edit2 className="w-3 h-3 text-orange-600" />
                             <span>Edit</span>
                           </button>
+                        ) : (
+                          <span
+                            title="Hanya Owner yang dapat mengubah tarif"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-lg border border-slate-200 dark:border-slate-700 cursor-not-allowed"
+                          >
+                            <Lock className="w-3 h-3 text-slate-400" />
+                            <span>Terkunci</span>
+                          </span>
                         )}
                       </td>
                     </tr>

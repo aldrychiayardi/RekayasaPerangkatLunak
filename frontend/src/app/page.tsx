@@ -13,8 +13,6 @@ import {
   ShieldCheck,
   ArrowRight,
   Sparkles,
-  Zap,
-  Boxes,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -47,7 +45,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-              Didukung armada multi-modal darat, laut, dan kargo udara yang menghubungkan 500+ kota di Indonesia dengan status tracking real-time dan tarif transparan.
+              Didukung layanan reguler dan pengiriman kendaraan dengan status tracking real-time dan tarif transparan.
             </p>
           </div>
 
@@ -122,37 +120,37 @@ export default function LandingPage() {
               Pilihan Layanan Ekspedisi
             </h2>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              Sesuaikan dengan Kebutuhan & Kecepatan Pengiriman Anda
+              Pilih Layanan Pengiriman yang Sesuai
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Mulai dari paket kilat dokumen harian hingga distribusi kargo berton-ton, NusantaraExpress memberikan solusi terbaik.
+              Tersedia pengiriman reguler untuk paket dan layanan pengiriman kendaraan.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Service 1: Express */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Service 1: Regular */}
             <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-7 hover:border-orange-500/50 transition duration-200 group flex flex-col justify-between">
               <div>
                 <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-950 flex items-center justify-center text-orange-600 mb-5 group-hover:scale-110 transition">
-                  <Zap className="w-6 h-6" />
+                  <PackageCheck className="w-6 h-6" />
                 </div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-lg font-black text-slate-900 dark:text-white">NEX EXPRESS</h4>
+                  <h4 className="text-lg font-black text-slate-900 dark:text-white">REGULER</h4>
                   <span className="text-[11px] font-bold bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400 px-2.5 py-0.5 rounded-full">
-                    1-2 Hari
+                    Rp12.000/kg
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                  Layanan pengiriman prioritas menggunakan jalur udara tercepat. Ideal untuk dokumen penting, makanan segar, dan paket darurat.
+                  Layanan pengiriman paket dengan tarif berdasarkan berat tagihan.
                 </p>
                 <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2 mb-6">
                   <li className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Garansi uang kembali bila terlambat</span>
+                    <span>Tarif tetap Rp12.000 per kilogram</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Prioritas pemrosesan di setiap hub sortir</span>
+                    <span>Perhitungan menggunakan berat aktual atau volumetrik</span>
                   </li>
                 </ul>
               </div>
@@ -160,37 +158,37 @@ export default function LandingPage() {
                 href="/rates"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700"
               >
-                <span>Cek Tarif Express</span>
+                <span>Cek Tarif Reguler</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            {/* Service 2: Regular */}
+            {/* Service 2: Vehicle */}
             <div className="bg-slate-50 dark:bg-slate-800/60 border-2 border-orange-500/40 rounded-2xl p-7 shadow-sm relative group flex flex-col justify-between">
               <span className="absolute -top-3 right-6 bg-orange-600 text-white text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full">
-                Paling Favorit
+                Jasa Kendaraan
               </span>
               <div>
                 <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-blue-600 mb-5 group-hover:scale-110 transition">
                   <Truck className="w-6 h-6" />
                 </div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-lg font-black text-slate-900 dark:text-white">NEX REGULAR</h4>
+                  <h4 className="text-lg font-black text-slate-900 dark:text-white">KENDARAAN</h4>
                   <span className="text-[11px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400 px-2.5 py-0.5 rounded-full">
-                    2-3 Hari
+                    Rp200.000/unit
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                  Solusi pengiriman andalan belanja online (E-commerce) dan UMKM. Menjangkau seluruh kecamatan di Indonesia dengan ongkir hemat.
+                  Jasa pengiriman kendaraan dengan tarif tetap untuk setiap unit kendaraan.
                 </p>
                 <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2 mb-6">
                   <li className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Layanan jemput paket (Free Pickup)</span>
+                    <span>Tarif dihitung per unit kendaraan</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Integrasi cetak label thermal otomatis</span>
+                    <span>Status pengiriman dapat dilacak</span>
                   </li>
                 </ul>
               </div>
@@ -198,45 +196,11 @@ export default function LandingPage() {
                 href="/dashboard/customer"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700"
               >
-                <span>Mulai Kirim Sekarang</span>
+                <span>Pesan Pengiriman Kendaraan</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            {/* Service 3: Cargo */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-7 hover:border-blue-500/50 transition duration-200 group flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-purple-600 mb-5 group-hover:scale-110 transition">
-                  <Boxes className="w-6 h-6" />
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-lg font-black text-slate-900 dark:text-white">NEX CARGO</h4>
-                  <span className="text-[11px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400 px-2.5 py-0.5 rounded-full">
-                    3-5 Hari
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                  Tarif super hemat khusus muatan besar di atas 10 Kg, pallet mesin, furniture, barang pindahan, hingga distribusi logistik B2B.
-                </p>
-                <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2 mb-6">
-                  <li className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Tarif per-kg hemat mulai Rp 8.000</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Armada truk Fuso, Wingbox & Kontainer</span>
-                  </li>
-                </ul>
-              </div>
-              <Link
-                href="/rates"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700"
-              >
-                <span>Hitung Tarif Kargo</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
           </div>
         </div>
       </section>

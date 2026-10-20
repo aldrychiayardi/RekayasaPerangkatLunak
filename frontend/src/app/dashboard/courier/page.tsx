@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { getRecentTrackingEvents, getAllShipments } from "@/actions/shipment-actions";
+import { getCurrentUser } from "@/actions/auth-actions";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CourierClient } from "./CourierClient";
@@ -7,6 +9,17 @@ import { Truck } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function CourierDashboardPage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login?redirect=/dashboard/courier");
+  }
+
+  // Hanya Kurir, Admin, dan Owner yang boleh mengakses scanner & checkpoint
+  if (user.role === "CUSTOMER") {
+    redirect("/dashboard/customer");
+  }
+
   const [recentEvents, shipments] = await Promise.all([
     getRecentTrackingEvents(15),
     getAllShipments(),
@@ -23,7 +36,7 @@ export default async function CourierDashboardPage() {
           <div className="mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase mb-2">
               <Truck className="w-3.5 h-3.5" />
-              Portal Operasional & Kurir
+              Portal Operasional & Kurir ({user.role})
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
               Scanner Hub & Update Status Checkpoint

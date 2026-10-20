@@ -16,6 +16,7 @@
     "lint": "npm run lint --workspace=@nusantara-express/frontend && npm run lint --workspace=@nusantara-express/backend",
     "db:generate": "npm run db:generate --workspace=@nusantara-express/backend",
     "db:push": "npm run db:push --workspace=@nusantara-express/backend",
-    "db:seed": "npm run db:seed --workspace=@nusantara-express/backend"
+    "db:seed": "npm run db:seed --workspace=@nusantara-express/backend",
+    "db:routes": "npm run db:routes --workspace=@nusantara-express/backend"
   }
 }
