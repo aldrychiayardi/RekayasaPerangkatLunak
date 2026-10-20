@@ -1,10 +1,17 @@
 import { Router } from "express";
-import { randomInt } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { ApiError } from "../lib/errors.js";
 import { prisma } from "../lib/prisma.js";
 import { authenticate, requireRole } from "../lib/auth-middleware.js";
 import { DESTINATION_CITIES, ORIGIN_CITY, isSupportedDestination } from "../lib/locations.js";
+import { updateAdminRate } from "../services/admin-rates.service.js";
+import { recordCourierCheckpoint } from "../services/courier.service.js";
+import {
+  calculateRatesForRoute,
+  type RateCalculationInput
+} from "../services/rates.service.js";
+import { createShipment } from "../services/shipment.service.js";
+import { getShipmentByAwb } from "../services/tracking.service.js";
 
 export const apiRouter = Router();
 
@@ -38,15 +45,6 @@ interface ShipmentInput {
   width: number;
   height: number;
   serviceType: string;
-}
-
-interface RateCalculationInput {
-  originCity: string;
-  destinationCity: string;
-  weight: number;
-  length: number;
-  width: number;
-  height: number;
 }
 
 function requireString(value: unknown, label: string): string {
@@ -117,79 +115,12 @@ function getRateCalculationInput(value: unknown): RateCalculationInput {
   };
 }
 
-function getAwb(value: string | string[] | undefined): string {
-  if (typeof value !== "string" || !value.trim()) {
-    throw new ApiError(400, "Nomor resi tidak valid.");
-  }
-  return value.trim().toUpperCase();
-}
-
 function getNumberOfRecords(value: unknown, fallback: number): number {
   if (typeof value !== "string") {
     return fallback;
   }
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, 100) : fallback;
-}
-
-function generateAwb(): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const randomPart = Array.from({ length: 6 }, () => alphabet[randomInt(alphabet.length)]).join("");
-  return `NEX-${new Date().getFullYear()}${randomPart}`;
-}
-
-function calculateRates(input: RateCalculationInput, storedRates: Array<{
-  serviceType: string;
-  ratePerKg: number;
-  estimatedDays: string;
-}>) {
-  const actualWeight = Math.max(0.1, Number(input.weight) || 1);
-  const length = Math.max(1, Number(input.length) || 10);
-  const width = Math.max(1, Number(input.width) || 10);
-  const height = Math.max(1, Number(input.height) || 10);
-  const volumetricWeight = Math.round(((length * width * height) / 6000) * 100) / 100;
-  const rawChargeable = Math.max(actualWeight, volumetricWeight);
-  const chargeableWeight = Math.max(1, Math.round(rawChargeable * 10) / 10);
-  const regular = storedRates.find((rate) => rate.serviceType === "REGULAR");
-  const vehicle = storedRates.find((rate) => rate.serviceType === "VEHICLE");
-  const regularRate = regular && regular.ratePerKg > 0
-    ? regular.ratePerKg
-    : defaultRates.REGULAR.rate;
-  const vehicleRate = vehicle && vehicle.ratePerKg > 0
-    ? vehicle.ratePerKg
-    : defaultRates.VEHICLE.rate;
-
-  return {
-    volumetricWeight,
-    actualWeight,
-    chargeableWeight,
-    services: [
-      {
-        serviceType: "REGULAR",
-        serviceName: "Reguler",
-        rateAmount: regularRate,
-        rateUnit: "kg",
-        totalCost: Math.round(regularRate * chargeableWeight),
-        estimatedDays: regular?.estimatedDays && regular.estimatedDays !== "Belum ditentukan"
-          ? regular.estimatedDays
-          : defaultRates.REGULAR.estimatedDays,
-        description: "Pengiriman reguler dengan tarif berdasarkan berat tagihan.",
-        isEligible: true
-      },
-      {
-        serviceType: "VEHICLE",
-        serviceName: "Kendaraan",
-        rateAmount: vehicleRate,
-        rateUnit: "unit",
-        totalCost: vehicleRate,
-        estimatedDays: vehicle?.estimatedDays && vehicle.estimatedDays !== "Belum ditentukan"
-          ? vehicle.estimatedDays
-          : defaultRates.VEHICLE.estimatedDays,
-        description: "Jasa pengiriman kendaraan dengan tarif per unit.",
-        isEligible: true
-      }
-    ]
-  };
 }
 
 apiRouter.get("/health", (_request, response) => {
@@ -235,74 +166,14 @@ apiRouter.get("/shipments", authenticate(true), async (request, response) => {
 });
 
 apiRouter.get("/shipments/:awb", async (request, response) => {
-  const trackingNumber = getAwb(request.params.awb);
-  const shipment = await prisma.shipment.findUnique({
-    where: { trackingNumber },
-    include: { events: { orderBy: { timestamp: "desc" } } }
-  });
-  if (!shipment) {
-    throw new ApiError(404, `Paket dengan nomor resi ${trackingNumber} tidak ditemukan.`);
-  }
+  const shipment = await getShipmentByAwb(prisma, request.params.awb);
   response.json(shipment);
 });
 
 apiRouter.post("/shipments", authenticate(true), async (request, response) => {
   const input = getShipmentInput(request.body);
-  const length = Math.max(1, input.length);
-  const width = Math.max(1, input.width);
-  const height = Math.max(1, input.height);
-  const volumetricWeight = Math.round(((length * width * height) / 6000) * 100) / 100;
-  const chargeableWeight = Math.max(1, Math.round(Math.max(input.weight, volumetricWeight) * 10) / 10);
-  const rate = await prisma.priceRate.findFirst({
-    where: {
-      originCity: input.senderCity,
-      destinationCity: input.receiverCity,
-      serviceType: input.serviceType
-    }
-  });
-  if (!rate) {
-    throw new ApiError(404, "Tarif untuk rute ini belum tersedia.");
-  }
-  const ratePerKg = rate.ratePerKg > 0
-    ? rate.ratePerKg
-    : defaultRates[input.serviceType as keyof typeof defaultRates].rate;
-  const trackingNumber = generateAwb();
-
-  try {
-    const shipment = await prisma.shipment.create({
-      data: {
-        ...input,
-        userId: request.user?.id ?? null,
-        trackingNumber,
-        weight: input.weight,
-        length,
-        width,
-        height,
-        chargeableWeight,
-        totalCost: input.serviceType === "VEHICLE"
-          ? ratePerKg
-          : Math.round(ratePerKg * chargeableWeight),
-        status: "ORDER_CREATED",
-        events: {
-          create: {
-            status: "ORDER_CREATED",
-            location: `Drop Point / Gerai ${input.senderCity}`,
-            description: "Pesanan pengiriman berhasil dibuat di sistem NusantaraExpress."
-          }
-        }
-      },
-      include: { events: { orderBy: { timestamp: "desc" } } }
-    });
-    response.status(201).json(shipment);
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
-      throw new ApiError(503, "Nomor resi gagal dibuat. Silakan coba kembali.");
-    }
-    throw error;
-  }
+  const shipment = await createShipment(prisma, input, request.user?.id ?? null);
+  response.status(201).json(shipment);
 });
 
 apiRouter.post(
@@ -310,36 +181,13 @@ apiRouter.post(
   authenticate(),
   requireRole("ADMIN", "COURIER", "OWNER"),
   async (request, response) => {
-    const trackingNumber = getAwb(request.params.awb);
-  const body = request.body as Record<string, unknown>;
-  const status = requireString(body?.status, "Status pengiriman");
-  if (!shipmentStatuses.includes(status)) {
-    throw new ApiError(400, "Status pengiriman tidak dikenal.");
-  }
-  const location = requireString(body?.location, "Lokasi checkpoint");
-  const description = requireString(body?.description, "Keterangan checkpoint");
-  const shipment = await prisma.shipment.findUnique({ where: { trackingNumber } });
-  if (!shipment) {
-    throw new ApiError(404, `Paket dengan nomor resi ${trackingNumber} tidak ditemukan.`);
-  }
-
-  const event = await prisma.$transaction(async (transaction) => {
-    const createdEvent = await transaction.trackingEvent.create({
-      data: {
-        shipmentId: shipment.id,
-        status,
-        location,
-        description,
-        timestamp: new Date()
-      }
+    const body = request.body as Record<string, unknown>;
+    const event = await recordCourierCheckpoint(prisma, request.params.awb, {
+      status: requireString(body?.status, "Status pengiriman"),
+      location: requireString(body?.location, "Lokasi checkpoint"),
+      description: requireString(body?.description, "Keterangan checkpoint")
     });
-    await transaction.shipment.update({
-      where: { id: shipment.id },
-      data: { status, updatedAt: new Date() }
-    });
-    return createdEvent;
-  });
-  response.status(201).json(event);
+    response.status(201).json(event);
 });
 
 apiRouter.get(
@@ -427,19 +275,7 @@ apiRouter.get("/rates", async (request, response) => {
 
 apiRouter.post("/rates/calculate", async (request, response) => {
   const input = getRateCalculationInput(request.body);
-  const rates = await prisma.priceRate.findMany({
-    where: {
-      originCity: input.originCity,
-      destinationCity: input.destinationCity
-    }
-  });
-  if (rates.length === 0) {
-    throw new ApiError(
-      404,
-      `Tarif untuk rute ${input.originCity} ke ${input.destinationCity} belum tersedia.`
-    );
-  }
-  response.json(calculateRates(input, rates));
+  response.json(await calculateRatesForRoute(prisma, input));
 });
 
 apiRouter.put(
@@ -447,30 +283,10 @@ apiRouter.put(
   authenticate(),
   requireRole("OWNER"),
   async (request, response) => {
-    const id = request.params.id;
-  if (typeof id !== "string" || !id) {
-    throw new ApiError(400, "ID tarif tidak valid.");
-  }
-  const body = request.body as Record<string, unknown>;
-  const ratePerKg = Number(body?.ratePerKg);
-  if (!Number.isFinite(ratePerKg) || ratePerKg <= 0) {
-    throw new ApiError(400, "Tarif harus lebih besar dari 0.");
-  }
-  const estimatedDays = requireString(body?.estimatedDays, "Estimasi waktu");
-
-  try {
-    const updatedRate = await prisma.priceRate.update({
-      where: { id },
-      data: { ratePerKg, estimatedDays }
+    const body = request.body as Record<string, unknown>;
+    const updatedRate = await updateAdminRate(prisma, requireString(request.params.id, "ID tarif"), {
+      ratePerKg: Number(body?.ratePerKg),
+      estimatedDays: requireString(body?.estimatedDays, "Estimasi waktu")
     });
     response.json(updatedRate);
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      throw new ApiError(404, "Data tarif tidak ditemukan.");
-    }
-    throw error;
-  }
 });

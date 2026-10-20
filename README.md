@@ -49,6 +49,26 @@ README.md
 | `/dashboard/courier` | Mencari AWB dan mencatat status, lokasi, serta keterangan paket |
 | `/dashboard/admin` | Melihat metrik pengiriman dan mengubah tarif |
 
+## User Story MVP dan Acceptance Criteria
+
+1. **US-01 — Kalkulasi ongkos kirim (Rates Calculation)**
+   - Sebagai calon pengirim, saya ingin melihat ongkir Reguler dan Kendaraan untuk rute yang didukung.
+   - AC: berat tagihan Reguler adalah nilai maksimum antara berat aktual dan `(panjang × lebar × tinggi) / 6000`; ongkir Reguler adalah tarif per kg dikali berat tagihan; ongkir Kendaraan adalah tarif tetap per unit; input berat/dimensi tidak valid dan rute tanpa tarif ditolak.
+2. **US-02 — Membuat kiriman (Create Shipment)**
+   - Sebagai pelanggan, saya ingin membuat kiriman dan memperoleh nomor resi untuk pelacakan.
+   - AC: kiriman baru mendapat AWB `NEX-<tahun><kode-acak>` yang dijaga unik oleh database, status awal `ORDER_CREATED`, dan checkpoint awal pada transaksi pembuatan; tarif Kendaraan dihitung per unit.
+3. **US-03 — Melacak kiriman (Tracking & Shipment Details)**
+   - Sebagai pengirim atau penerima, saya ingin melihat detail paket dan histori checkpoint berdasarkan AWB.
+   - AC: AWB dinormalisasi dengan trim dan huruf kapital; detail mencakup checkpoint terbaru lebih dahulu; AWB kosong ditolak dan AWB yang tidak ditemukan menghasilkan 404.
+4. **US-04 — Memperbarui checkpoint kurir (Courier Event Checkpoint)**
+   - Sebagai kurir, saya ingin mencatat lokasi/status paket agar pelanggan melihat progres terbaru.
+   - AC: checkpoint baru dan status kiriman diperbarui secara atomik; urutan status harus maju satu tahap, misalnya `ORDER_CREATED` → `PICKED_UP` → `AT_ORIGIN_HUB` → `IN_TRANSIT`; lompatan/regresi ditolak, dan status terminal `DELIVERED`/`FAILED` tidak dapat diubah lagi.
+5. **US-05 — Mengelola tarif (Admin Rate Management)**
+   - Sebagai Owner, saya ingin mengubah tarif dasar dan estimasi pengiriman.
+   - AC: hanya Owner dapat memanggil endpoint update; tarif harus lebih besar dari nol dan estimasi wajib diisi; keduanya disimpan bersama; ID tarif yang tidak ditemukan menghasilkan 404. Kolom `ratePerKg` juga menyimpan tarif per unit untuk layanan Kendaraan.
+
+Implementasi bisnis berada di `backend/src/services/`. Lima file test terpisah berada di folder yang sama: `rates.service.test.ts`, `shipment.service.test.ts`, `tracking.service.test.ts`, `courier.service.test.ts`, dan `admin-rates.service.test.ts`. Semua test mem-mock akses Prisma agar tidak membutuhkan database lokal. Jalankan dengan `npm run test --workspace=@nusantara-express/backend`.
+
 Rute operasional aplikasi dibatasi dari Pontianak menuju Kabupaten Kubu Raya, Sungai Pinyuh, Anjongan, Toho, Menjalin, Karangan, dan Seluas melalui Anjongan. Tarif default adalah Rp12.000/kg untuk pengiriman reguler dan Rp200.000/unit untuk pengiriman kendaraan. Owner dapat menyesuaikan tarif dan estimasi melalui dashboard admin.
 
 Kalkulasi berat volumetrik untuk layanan reguler menggunakan `panjang × lebar × tinggi / 6000`; berat tagihan membandingkan berat aktual dengan berat volumetrik. Pilihan layanan saat ini adalah Reguler dan Kendaraan. Tarif Reguler dihitung berdasarkan berat tagihan, sedangkan tarif Kendaraan dihitung per unit. Label pengiriman menyediakan barcode dan QR code.
