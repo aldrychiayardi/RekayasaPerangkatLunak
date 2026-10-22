@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { ApiError } from "../lib/errors.js";
-import { getShipmentByAwb, normalizeAwb } from "./tracking.service.js";
+import { getShipmentByAwb, normalizeAwb } from "../services/tracking.service.js";
 
 describe("tracking service", () => {
   it("normalizes AWB and returns the shipment with newest checkpoints first", async () => {

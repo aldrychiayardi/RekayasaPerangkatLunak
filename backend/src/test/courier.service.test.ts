@@ -4,7 +4,7 @@ import { ApiError } from "../lib/errors.js";
 import {
   recordCourierCheckpoint,
   type CourierCheckpointInput
-} from "./courier.service.js";
+} from "../services/courier.service.js";
 
 const checkpoint: CourierCheckpointInput = {
   status: "IN_TRANSIT",

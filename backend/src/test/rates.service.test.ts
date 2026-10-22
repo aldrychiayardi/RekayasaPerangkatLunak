@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { ApiError } from "../lib/errors.js";
-import { calculateRates, calculateRatesForRoute } from "./rates.service.js";
+import { calculateRates, calculateRatesForRoute } from "../services/rates.service.js";
 
 const input = {
   originCity: "Pontianak",

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { ApiError } from "../lib/errors.js";
-import { createShipment, type CreateShipmentInput } from "./shipment.service.js";
+import { createShipment, type CreateShipmentInput } from "../services/shipment.service.js";
 
 const shipmentInput: CreateShipmentInput = {
   senderName: "Ayu",

@@ -67,7 +67,7 @@ README.md
    - Sebagai Owner, saya ingin mengubah tarif dasar dan estimasi pengiriman.
    - AC: hanya Owner dapat memanggil endpoint update; tarif harus lebih besar dari nol dan estimasi wajib diisi; keduanya disimpan bersama; ID tarif yang tidak ditemukan menghasilkan 404. Kolom `ratePerKg` juga menyimpan tarif per unit untuk layanan Kendaraan.
 
-Implementasi bisnis berada di `backend/src/services/`. Lima file test terpisah berada di folder yang sama: `rates.service.test.ts`, `shipment.service.test.ts`, `tracking.service.test.ts`, `courier.service.test.ts`, dan `admin-rates.service.test.ts`. Semua test mem-mock akses Prisma agar tidak membutuhkan database lokal. Jalankan dengan `npm run test --workspace=@nusantara-express/backend`.
+Implementasi bisnis berada di `backend/src/services/`, sedangkan lima file unit test dikumpulkan terpisah di `backend/src/test/`: `rates.service.test.ts`, `shipment.service.test.ts`, `tracking.service.test.ts`, `courier.service.test.ts`, dan `admin-rates.service.test.ts`. Semua test mem-mock akses Prisma agar tidak membutuhkan database lokal. Jalankan dengan `npm run test --workspace=@nusantara-express/backend`.
 
 Rute operasional aplikasi dibatasi dari Pontianak menuju Kabupaten Kubu Raya, Sungai Pinyuh, Anjongan, Toho, Menjalin, Karangan, dan Seluas melalui Anjongan. Tarif default adalah Rp12.000/kg untuk pengiriman reguler dan Rp200.000/unit untuk pengiriman kendaraan. Owner dapat menyesuaikan tarif dan estimasi melalui dashboard admin.
 

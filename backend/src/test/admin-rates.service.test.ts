@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { ApiError } from "../lib/errors.js";
-import { updateAdminRate } from "./admin-rates.service.js";
+import { updateAdminRate } from "../services/admin-rates.service.js";
 
 describe("admin rates service", () => {
   it("updates the stored base rate and estimated delivery time", async () => {
