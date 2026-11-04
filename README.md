@@ -1,179 +1,270 @@
-# NusantaraExpress
+# NusantaraExpress 🚚📦
 
-NusantaraExpress adalah aplikasi simulasi layanan ekspedisi Indonesia. Pengunjung dapat menghitung ongkos kirim dan melacak resi; portal pelanggan membuat kiriman dan label thermal; portal kurir mencatat checkpoint; dashboard admin mengelola tarif dan memantau pengiriman.
+> **Sistem Informasi & Simulasi Logistik Ekspedisi Terpadu Indonesia**  
+> Mata Kuliah: Rekayasa Perangkat Lunak (RPL) — Semester 3  
+> Status Proyek: **MVP Lengkap, Lulus Uji Keamanan, Siap Demo & Deploy**  
+> Hasil Unit Test: **28/28 Unit Tests PASSED (100%)**
 
-## Pembagian folder
+---
+
+## 🎥 Tautan Video Demonstrasi & Paket Demo
+
+* **Tautan Video Demo Aplikasi (Google Drive):**  
+  👉 [Tonton Video Demonstrasi NusantaraExpress](https://drive.google.com/file/d/198ZOUDHvKgN_Ppl6Wt-JfbVEGz91vxhj/view?usp=sharing)
+* **Demo Live Lokal:**
+  * **Frontend Web App:** `http://localhost:3000`
+  * **Backend REST API:** `http://localhost:4000` (Healthcheck: `http://localhost:4000/api/health`)
+* **Laporan Terkait:**
+  * [Laporan Uji Keamanan (SECURITY_REPORT.md)](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/SECURITY_REPORT.md)
+  * [Checklist Fitur MVP (checklist_mvp.md)](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/checklist_mvp.md)
+
+---
+
+## 📋 Pembagian Struktur Folder (Monorepo)
+
+Aplikasi dibangun menggunakan pola arsitektur **Monorepo** yang memisahkan aplikasi antarmuka pengguna (Frontend Next.js) dengan penyedia logika bisnis serta basis data (Backend Express + Prisma):
 
 ```text
-frontend/
-  src/
-    actions/       Integrasi server-side antara Next.js dan REST API
-    app/           Halaman website dan dashboard
-    components/    Komponen antarmuka
-    lib/           Utilitas tampilan dan format data
-  public/          Aset statis website
-  package.json     Dependensi dan perintah frontend
-  next.config.ts
-  tsconfig.json
-
-backend/
-  src/
-    routes/        Endpoint REST untuk tarif, kiriman, pelacakan, dan admin
-    lib/           Koneksi Prisma, konfigurasi, dan penanganan error
-    app.ts
-    server.ts
-  prisma/
-    schema.prisma  Model SQLite untuk aplikasi ekspedisi
-    seed.ts        Tarif kota dan data demo resi
-    dev.db         Database lokal setelah dibuat
-  package.json     Dependensi dan perintah backend
-  tsconfig.json
-
-package.json       Workspace dan perintah untuk menjalankan kedua aplikasi
-package-lock.json
-.env.example       Contoh konfigurasi backend
-README.md
+RekayasaPerangkatLunak/
+├── frontend/                     # Aplikasi Web Klien (Next.js 15 App Router + Tailwind CSS)
+│   ├── src/
+│   │   ├── actions/             # Integrasi Server-Side Next.js dengan REST API
+│   │   ├── app/                 # Halaman rute publik dan portal dashboard
+│   │   ├── components/          # Komponen antarmuka (Label Thermal, Calculator, Scanner AWB)
+│   │   └── lib/                 # Utilitas helper, format tanggal, & manipulasi style
+│   ├── public/                  # Aset statis & logo
+│   └── package.json
+│
+├── backend/                      # REST API Server (Express.js 5 + Prisma ORM + SQLite)
+│   ├── src/
+│   │   ├── routes/              # Routing REST API (/api/auth, /api/shipments, /api/rates)
+│   │   ├── services/            # Logika bisnis inti (Rates, Shipment, Tracking, Courier)
+│   │   ├── lib/                 # Prisma client, JWT, security middleware, & centralized error
+│   │   ├── test/                # Unit test Vitest (17 MVP tests + 11 Security tests)
+│   │   ├── app.ts               # Inisialisasi Express, Helmet, CORS, & Rate Limiter
+│   │   └── server.ts            # Entrypoint HTTP listener
+│   ├── prisma/
+│   │   ├── schema.prisma        # Skema database relasional (User, Shipment, TrackingEvent, PriceRate)
+│   │   ├── seed.ts              # Seeding akun demo, tarif rute Pontianak, dan sampel resi
+│   │   └── dev.db               # Basis data lokal SQLite
+│   └── package.json
+│
+├── .env.example                 # Template konfigurasi variabel lingkungan
+├── package.json                 # Konfigurasi workspace monorepo & script sentral
+└── README.md                    # Dokumentasi utama proyek
 ```
 
-`frontend` adalah Next.js, React, TypeScript, dan Tailwind CSS. `backend` adalah Express REST API dengan Prisma dan SQLite. Frontend mengakses backend melalui server actions, sehingga tampilan dan rute halaman tetap berada di aplikasi Next.js tanpa mengakses Prisma secara langsung.
+---
 
-## Fitur website
+## ⚙️ Prasyarat Sistem (Prerequisites)
 
-| Halaman | Fungsi |
-| --- | --- |
-| `/` | Beranda NusantaraExpress dan akses cepat ke layanan |
-| `/track` | Mencari nomor resi |
-| `/track/[awb]` | Melihat detail paket dan riwayat checkpoint |
-| `/rates` | Kalkulator dan daftar tarif pengiriman |
-| `/dashboard/customer` | Membuat kiriman, melihat riwayat, dan mencetak label |
-| `/dashboard/courier` | Mencari AWB dan mencatat status, lokasi, serta keterangan paket |
-| `/dashboard/admin` | Melihat metrik pengiriman dan mengubah tarif |
+Sebelum melakukan instalasi, pastikan perangkat Anda telah terpasang:
+* **Node.js**: Versi `20.x` LTS atau lebih baru
+* **npm**: Versi `10.x` atau lebih baru
+* **Git**: Versi `2.x` atau lebih baru
 
-## User Story MVP dan Acceptance Criteria
-
-1. **US-01 — Kalkulasi ongkos kirim (Rates Calculation)**
-   - Sebagai calon pengirim, saya ingin melihat ongkir Reguler dan Kendaraan untuk rute yang didukung.
-   - AC: berat tagihan Reguler adalah nilai maksimum antara berat aktual dan `(panjang × lebar × tinggi) / 6000`; ongkir Reguler adalah tarif per kg dikali berat tagihan; ongkir Kendaraan adalah tarif tetap per unit; input berat/dimensi tidak valid dan rute tanpa tarif ditolak.
-2. **US-02 — Membuat kiriman (Create Shipment)**
-   - Sebagai pelanggan, saya ingin membuat kiriman dan memperoleh nomor resi untuk pelacakan.
-   - AC: kiriman baru mendapat AWB `NEX-<tahun><kode-acak>` yang dijaga unik oleh database, status awal `ORDER_CREATED`, dan checkpoint awal pada transaksi pembuatan; tarif Kendaraan dihitung per unit.
-3. **US-03 — Melacak kiriman (Tracking & Shipment Details)**
-   - Sebagai pengirim atau penerima, saya ingin melihat detail paket dan histori checkpoint berdasarkan AWB.
-   - AC: AWB dinormalisasi dengan trim dan huruf kapital; detail mencakup checkpoint terbaru lebih dahulu; AWB kosong ditolak dan AWB yang tidak ditemukan menghasilkan 404.
-4. **US-04 — Memperbarui checkpoint kurir (Courier Event Checkpoint)**
-   - Sebagai kurir, saya ingin mencatat lokasi/status paket agar pelanggan melihat progres terbaru.
-   - AC: checkpoint baru dan status kiriman diperbarui secara atomik; urutan status harus maju satu tahap, misalnya `ORDER_CREATED` → `PICKED_UP` → `AT_ORIGIN_HUB` → `IN_TRANSIT`; lompatan/regresi ditolak, dan status terminal `DELIVERED`/`FAILED` tidak dapat diubah lagi.
-5. **US-05 — Mengelola tarif (Admin Rate Management)**
-   - Sebagai Owner, saya ingin mengubah tarif dasar dan estimasi pengiriman.
-   - AC: hanya Owner dapat memanggil endpoint update; tarif harus lebih besar dari nol dan estimasi wajib diisi; keduanya disimpan bersama; ID tarif yang tidak ditemukan menghasilkan 404. Kolom `ratePerKg` juga menyimpan tarif per unit untuk layanan Kendaraan.
-
-Implementasi bisnis berada di `backend/src/services/`, sedangkan lima file unit test dikumpulkan terpisah di `backend/src/test/`: `rates.service.test.ts`, `shipment.service.test.ts`, `tracking.service.test.ts`, `courier.service.test.ts`, dan `admin-rates.service.test.ts`. Semua test mem-mock akses Prisma agar tidak membutuhkan database lokal. Jalankan dengan `npm run test --workspace=@nusantara-express/backend`.
-
-Rute operasional aplikasi dibatasi dari Pontianak menuju Kabupaten Kubu Raya, Sungai Pinyuh, Anjongan, Toho, Menjalin, Karangan, dan Seluas melalui Anjongan. Tarif default adalah Rp12.000/kg untuk pengiriman reguler dan Rp200.000/unit untuk pengiriman kendaraan. Owner dapat menyesuaikan tarif dan estimasi melalui dashboard admin.
-
-Kalkulasi berat volumetrik untuk layanan reguler menggunakan `panjang × lebar × tinggi / 6000`; berat tagihan membandingkan berat aktual dengan berat volumetrik. Pilihan layanan saat ini adalah Reguler dan Kendaraan. Tarif Reguler dihitung berdasarkan berat tagihan, sedangkan tarif Kendaraan dihitung per unit. Label pengiriman menyediakan barcode dan QR code.
-
-Aplikasi ini merupakan simulasi lokal. Data checkpoint, lokasi hub, tarif, serta kiriman contoh tidak terhubung dengan armada, GPS, atau penyedia ekspedisi eksternal.
-
-## Persyaratan
-
-- Node.js 20 atau lebih baru
-- npm
-
-## Instalasi dan konfigurasi
-
-Jalankan dari direktori root proyek:
-
-```powershell
-npm install
-Copy-Item .env.example .env
-npm run db:generate
-npm run db:push
-npm run db:seed
+Verifikasi versi instalasi pada terminal:
+```bash
+node -v
+npm -v
+git -v
 ```
 
-Database SQLite akan dibuat di `backend/prisma/dev.db`. Perintah seed mengisi tarif awal untuk rute Pontianak dan tiga kiriman demo:
+---
 
-- `NEX-882910` — Pontianak ke Seluas, Reguler
-- `NEX-554201` — Pontianak ke Kubu Raya, Reguler
-- `NEX-109283` — Pontianak ke Anjongan, Kendaraan
+## 🚀 Panduan Instalasi Ulang (FRESH CLONE REPOSITORY)
 
-> Seed mengosongkan tabel data sebelum membuat ulang data demo. Jangan jalankan jika ingin mempertahankan perubahan data lokal.
+Ikuti langkah-langkah berikut untuk mengkloning dan menginisialisasi repositori dari awal:
 
-Untuk menambahkan rute koridor ke database yang sudah ada tanpa menghapus pengguna, kiriman, riwayat tracking, atau tarif tersimpan, jalankan:
-
-```powershell
-npm run db:routes
+### 1. Kloning Repositori
+Buka terminal dan jalankan:
+```bash
+git clone https://github.com/aldrychiayardi/RekayasaPerangkatLunak.git
+cd RekayasaPerangkatLunak
 ```
 
-Perintah ini hanya menambahkan tarif yang belum ada untuk Pontianak ke tujuh tujuan layanan. Tarif baru menggunakan nilai default Rp12.000/kg untuk Reguler dan Rp200.000/unit untuk Kendaraan; Owner dapat menyesuaikannya melalui dashboard admin.
+### 2. Salin Konfigurasi Environment (`.env`)
+Salin file konfigurasi lingkungan dari template default:
 
-## Menjalankan aplikasi
+* **Windows (PowerShell):**
+  ```powershell
+  Copy-Item .env.example .env
+  ```
+* **Linux / macOS / Bash:**
+  ```bash
+  cp .env.example .env
+  ```
 
-Buka dua terminal di direktori root.
-
-Terminal pertama — backend:
-
-```powershell
-npm run dev:backend
-```
-
-REST API berjalan di `http://localhost:4000`. Endpoint pemeriksaan: `GET http://localhost:4000/api/health`.
-
-Terminal kedua — frontend:
-
-```powershell
-npm run dev
-```
-
-Buka website di [http://localhost:3000](http://localhost:3000).
-
-Untuk build produksi:
-
-```powershell
-npm run build
-npm start
-```
-
-Pastikan backend tetap berjalan saat menggunakan website, karena halaman dan aksi data mengambil informasi melalui REST API.
-
-## REST API
-
-Semua endpoint menggunakan prefiks `/api`.
-
-| Method | Endpoint | Fungsi |
-| --- | --- | --- |
-| `GET` | `/health` | Memeriksa status API |
-| `GET` | `/shipments` | Daftar kiriman; mendukung query `query`, `status`, `service` |
-| `GET` | `/shipments/:awb` | Detail kiriman dan seluruh checkpoint |
-| `POST` | `/shipments` | Membuat kiriman beserta checkpoint awal |
-| `POST` | `/shipments/:awb/events` | Menambahkan checkpoint dan memperbarui status kiriman |
-| `GET` | `/tracking-events?limit=15` | Daftar checkpoint terbaru |
-| `GET` | `/rates` | Daftar tarif; mendukung filter `origin` dan `destination` |
-| `POST` | `/rates/calculate` | Menghitung estimasi ongkir berdasarkan kota dan dimensi |
-| `PUT` | `/rates/:id` | Memperbarui tarif dan estimasi waktu |
-| `GET` | `/admin/metrics` | Metrik ringkasan dashboard admin |
-
-Konfigurasi backend pada `.env`:
-
+Konfigurasi bawaan pada berkas `.env`:
 ```dotenv
 DATABASE_URL="file:./dev.db"
 API_PORT=4000
 WEB_ORIGIN=http://localhost:3000
 API_BASE_URL=http://localhost:4000
+JWT_SECRET=super-secret-nusantara-express-jwt-token-key-2026
 ```
 
-Untuk mengubah alamat API yang dipanggil frontend, atur `API_BASE_URL` di lingkungan proses Next.js.
+### 3. Pasang Seluruh Dependensi (Install Dependencies)
+Jalankan perintah berikut di direktori root untuk memasang seluruh dependensi workspace (frontend dan backend):
+```bash
+npm install
+```
 
-## Perintah workspace
+### 4. Inisialisasi Basis Data Lokal (SQLite & Prisma)
+Jalankan urutan perintah berikut untuk membentuk skema database dan mengisinya dengan data awal pengujian:
+```bash
+# Generate Prisma Client
+npm run db:generate
 
-| Perintah | Fungsi |
-| --- | --- |
-| `npm run dev` | Menjalankan frontend Next.js |
-| `npm run dev:backend` | Menjalankan backend Express dalam mode watch |
-| `npm run build` | Build frontend dan backend |
-| `npm run lint` | Menjalankan lint frontend dan backend |
-| `npm run db:generate` | Membuat Prisma Client |
-| `npm run db:push` | Menyelaraskan schema dengan SQLite lokal |
-| `npm run db:seed` | Membuat ulang data demonstrasi |
-| `npm run db:routes` | Menambahkan rute Pontianak tanpa menghapus data lain |
+# Sinkronisasi skema ke file database lokal SQLite (backend/prisma/dev.db)
+npm run db:push
+
+# Mengisi akun demo, tarif default rute Pontianak, dan sampel resi
+npm run db:seed
+```
+
+> **Tips:** Jika ingin menambahkan koridor tarif rute baru tanpa menghapus data pesanan atau user yang telah dibuat, gunakan perintah: `npm run db:routes`.
+
+---
+
+## 💻 Menjalankan Aplikasi (Mode Development)
+
+Untuk menjalankan aplikasi secara lokal dalam mode pengembangan, buka **dua terminal** pada direktori utama:
+
+### Terminal 1 — Backend REST API
+```bash
+npm run dev:backend
+```
+* Server berjalan di: `http://localhost:4000`
+* Tes koneksi backend: `http://localhost:4000/api/health` (menghasilkan status `{"status":"ok"}`)
+
+### Terminal 2 — Frontend Next.js
+```bash
+npm run dev
+```
+* Antarmuka aplikasi dapat diakses melalui browser di: `http://localhost:3000`
+
+---
+
+## 🔑 Paket Demo & Kredensial Pengujian (Role Access Matrix)
+
+Aplikasi telah dilengkapi dengan fitur **Quick Demo Login** pada halaman login (`/login`) atau dapat dimasukkan secara manual:
+
+| Peran (Role) | Alamat Email | Kata Sandi | Deskripsi Hak Akses Utama |
+| :--- | :--- | :--- | :--- |
+| **Owner** | `owner@nusantara.com` | `Owner123!` | Akses metrik finansial, omset logistik, dan hak penuh memodifikasi tarif/estimasi rute. |
+| **Admin Operasional** | `admin@nusantara.com` | `Admin123!` | Memantau seluruh operasional kiriman, filter status paket, mode tinjau (*read-only*) tarif. |
+| **Kurir** | `kurir@nusantara.com` | `Kurir123!` | Scanner nomor AWB dan pembaruan riwayat status checkpoint secara berurutan. |
+| **Pelanggan (Customer)** | `budi@gmail.com` | `User123!` | Membuat pesanan pengiriman, kalkulator ongkir live, riwayat kiriman, cetak label thermal waybill. |
+
+*Pengunjung umum juga dapat mendaftarkan akun baru secara mandiri melalui menu **Registrasi** (`/register`).*
+
+### Contoh Nomor Resi (AWB) Siap Lacak
+Nomor AWB sampel bawaan yang dapat langsung dilacak pada menu **Lacak Resi** (`/track`):
+* `NEX-882910` : Pontianak $\rightarrow$ Seluas (Reguler, Status: `OUT_FOR_DELIVERY`)
+* `NEX-554201` : Pontianak $\rightarrow$ Kubu Raya (Reguler, Status: `DELIVERED` - Selesai)
+* `NEX-109283` : Pontianak $\rightarrow$ Anjongan (Kendaraan, Status: `IN_TRANSIT` - Dalam Perjalanan)
+* Resi pesanan baru yang dibuat mandiri oleh akun Pelanggan (`NEX-<tahun><kode-acak>`).
+
+---
+
+## 🧪 Eksekusi Unit Test & Quality Assurance
+
+Pengujian unit test menggunakan **Vitest** pada backend yang memvalidasi logika kalkulasi tarif, transaksi pembuatan kiriman, pelacakan resi, alur checkpoint kurir, serta otorisasi keamanan:
+
+```bash
+# Menjalankan seluruh 28 unit tests dari root
+npm test
+
+# Menjalankan pengecekan kualitas kode & typecheck
+npm run lint
+```
+
+**Status Pengujian Terverifikasi:**
+* **Unit Tests:** `28/28 PASSED (100%)`
+* **Linting:** `0 Errors, 0 Warnings`
+
+---
+
+## 🏗️ Kompilasi & Menjalankan Mode Produksi (Build & Run)
+
+Untuk melakukan *production build* dan menjalankannya secara lokal:
+
+```bash
+# 1. Kompilasi Next.js frontend dan TypeScript backend
+npm run build
+
+# 2. Menjalankan server frontend produksi
+npm start
+
+# 3. Menjalankan server backend produksi (di terminal terpisah)
+npm run start:backend
+```
+
+---
+
+## 🌐 Panduan Deployment ke Cloud (Deploy Guide)
+
+Arsitektur monorepo NusantaraExpress sangat fleksibel untuk dideploy ke berbagai penyedia PaaS / Cloud:
+
+### Opsi A: Deployment Frontend (Next.js) ke Vercel
+1. Hubungkan repositori GitHub ke akun [Vercel](https://vercel.com).
+2. Tentukan konfigurasi project:
+   * **Root Directory:** `frontend`
+   * **Framework Preset:** `Next.js`
+   * **Build Command:** `npm run build`
+   * **Output Directory:** `.next`
+3. Tambahkan **Environment Variable**:
+   * `API_BASE_URL` : URL backend produksi (misal `https://api-nusantara.up.railway.app`).
+4. Klik **Deploy**.
+
+### Opsi B: Deployment Backend (Express + SQLite) ke Railway / Render
+1. Hubungkan repositori ke [Railway](https://railway.app) atau [Render](https://render.com).
+2. Konfigurasi service backend:
+   * **Root Directory:** `backend`
+   * **Build Command:** `npm run build && npm run db:push`
+   * **Start Command:** `npm run start`
+3. Konfigurasi **Environment Variables**:
+   * `DATABASE_URL` : `file:./dev.db` (atau pasang persistent volume disk jika menggunakan SQLite di container).
+   * `API_PORT` : `4000` (atau sesuaikan dengan `$PORT` platform).
+   * `WEB_ORIGIN` : Domain frontend Vercel (misal `https://nusantara-express.vercel.app`).
+   * `JWT_SECRET` : Kunci rahasia kriptografi acak yang kuat.
+4. Klik **Deploy**.
+
+---
+
+## 📑 Dokumentasi Endpoint REST API
+
+Seluruh endpoint backend menggunakan prefiks `/api`:
+
+| Method | Endpoint | Akses / Role | Deskripsi Fungsi |
+| :---: | :--- | :---: | :--- |
+| `GET` | `/api/health` | Publik | Memeriksa ketersediaan dan status server API |
+| `POST`| `/api/auth/register` | Publik | Mendaftarkan akun pelanggan baru |
+| `POST`| `/api/auth/login` | Publik | Login pengguna & penerbitan token JWT |
+| `GET` | `/api/rates` | Publik | Mengambil daftar tarif rute Pontianak |
+| `POST`| `/api/rates/calculate` | Publik | Kalkulator estimasi tarif berdasarkan berat & volume |
+| `PUT` | `/api/rates/:id` | **Owner Only** | Mengubah tarif dasar rute dan estimasi hari pengiriman |
+| `GET` | `/api/shipments` | Authenticated | Mengambil riwayat daftar pengiriman |
+| `POST`| `/api/shipments` | Authenticated | Membuat order kiriman baru & generate nomor AWB |
+| `GET` | `/api/shipments/:awb` | Publik | Detail lengkap resi dan histori riwayat checkpoint |
+| `POST`| `/api/shipments/:awb/events`| **Kurir / Admin**| Memperbarui checkpoint dan status paket secara sekuensial |
+| `GET` | `/api/admin/metrics` | **Owner / Admin**| Mengambil ringkasan omset dan metrik operasional logistik |
+
+---
+
+## 📜 Perintah Workspace (Command Cheat Sheet)
+
+| Perintah | Deskripsi |
+| :--- | :--- |
+| `npm run dev` | Menjalankan frontend Next.js (port 3000) |
+| `npm run dev:backend` | Menjalankan backend Express dengan tsx watch (port 4000) |
+| `npm test` | Menjalankan seluruh 28 unit test dari root |
+| `npm run lint` | Menjalankan ESLint & validasi tipe TypeScript |
+| `npm run build` | Melakukan build kompilasi produksi frontend & backend |
+| `npm start` | Menjalankan frontend hasil kompilasi produksi |
+| `npm run start:backend` | Menjalankan backend hasil kompilasi produksi |
+| `npm run db:generate` | Menghasilkan Prisma Client |
+| `npm run db:push` | Menerapkan skema Prisma ke database SQLite |
+| `npm run db:seed` | Inisialisasi ulang basis data dan data demonstrasi |
+| `npm run db:routes` | Menambahkan rute layanan Pontianak tanpa reset data pesanan |
