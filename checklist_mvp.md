@@ -1,8 +1,8 @@
 # Checklist Fitur MVP & Status Pengujian — NusantaraExpress
 
-**Target Akhir:** MVP Lengkap Sesuai Lingkup Proyek & Siap Didemonstrasikan  
+**Target Akhir:** MVP Lengkap Sesuai Lingkup Proyek, Hardened & Siap Didemonstrasikan  
 **Status Keseluruhan:** **PASSED & SIAP DEMO**  
-**Hasil Unit Test:** **17/17 PASSED (100%)**
+**Hasil Unit Test:** **31/31 PASSED (100%)**
 
 ---
 
@@ -61,42 +61,35 @@
 
 ---
 
-## 2. Cakupan Penyelesaian Teknis & Kualitas Sistem
-
-| Aspek Penilaian | Deskripsi & Bukti Implementasi | Status |
-| --- | --- | :---: |
-| **Integrasi Penuh (Full-Stack)** | Seluruh antarmuka Next.js terintegrasi penuh ke Express REST API dan database lokal SQLite via Prisma ORM. | [x] **TERPENUHI** |
-| **Alur End-to-End** | Alur pembuatan order pelanggan $\rightarrow$ pickup & checkpoint kurir $\rightarrow$ live tracking $\rightarrow$ monitoring admin/owner berjalan mulus tanpa hambatan. | [x] **TERPENUHI** |
-| **Penanganan Input Tidak Valid** | Seluruh masukan form (berat negatif, dimensi nol, AWB tidak terdaftar, tarif kosong) divalidasi di frontend dan backend dengan alert/feedback yang jelas. | [x] **TERPENUHI** |
-| **Penanganan Data Kosong (Empty State)** | Komponen riwayat pengiriman, pencarian tanpa hasil, dan resi tidak ditemukan menampilkan komponen ilustrasi dan pesan informatif yang ramah. | [x] **TERPENUHI** |
-| **Indikator Loading State** | Tombol submit, pencarian resi, kalkulator tarif, dan scanner dilengkapi animasi spinner/skeleton untuk menjamin responsivitas visual. | [x] **TERPENUHI** |
-| **Uji Regresi & Build** | Kompilasi frontend (`next build`) dan backend (`tsc`) berhasil tanpa error (*exit code 0*), linting lolos (*exit code 0*). | [x] **TERPENUHI** |
+### US-06 — Keamanan Sistem & Logging Terproteksi (Security & Safe Logging)
+| No | Kriteria Keamanan & Logging | Implementasi | Status Fitur | Status Unit Test |
+| --- | --- | --- | :---: | :---: |
+| 6.1 | Kriptografi token JWT (verifikasi signature, deteksi manipulasi payload) | `jwt.ts` & `security.service.test.ts` | [x] Selesai | **PASSED** |
+| 6.2 | Hashing password dengan bcrypt (salt rounds = 10, pencegahan rainbow table) | `auth.ts` & `security.service.test.ts` | [x] Selesai | **PASSED** |
+| 6.3 | Proteksi RBAC Middleware (blokir 401 unauthenticated, blokir 403 unauthorized role) | `auth-middleware.ts` | [x] Selesai | **PASSED** |
+| 6.4 | Anti-tampering status resi sekuensial dan penguncian status final | `courier.service.ts` | [x] Selesai | **PASSED** |
+| 6.5 | HTTP Security Headers (Helmet: anti-MIME sniffing, anti-clickjacking) | `app.ts` (`helmet`) | [x] Selesai | **PASSED** |
+| 6.6 | Proteksi Brute Force & DoS via Rate Limiter (20 req/15 min auth, 250 req/15 min API) | `app.ts` (`express-rate-limit`) | [x] Selesai | **PASSED** |
+| 6.7 | Masking data sensitif PII pada log (penyamaran password, token, no hp, email) | `logger.ts` & `logger.test.ts` | [x] Selesai | **PASSED** |
 
 ---
 
-## 3. Rincian Eksekusi Unit Test (Vitest)
+## 2. Ringkasan Eksekusi Unit Test (Vitest)
 
-Perintah eksekusi:
-```bash
-npm run test --workspace=@nusantara-express/backend
-```
+Hasil eksekusi `npm test` dari root workspace:
 
-Hasil eksekusi:
 ```text
+ RUN  v5.0.5 C:/SEMESTER 3/RekayasaPerangkatLunak/backend
+
+ ✓ src/test/logger.test.ts (3 tests)
+   - masks password, token, and secret fields in payloads
+   - handles primitive and non-object inputs safely
+   - registers finish handler and calls next() without blocking execution
+
  ✓ src/test/admin-rates.service.test.ts (3 tests)
    - updates the stored base rate and estimated delivery time
    - rejects zero/negative rates and an empty estimate without updating
    - maps an unknown rate ID to a not-found API error
-
- ✓ src/test/tracking.service.test.ts (3 tests)
-   - normalizes AWB and returns the shipment with newest checkpoints first
-   - rejects an empty AWB without querying Prisma
-   - returns not found for an unknown AWB
-
- ✓ src/test/courier.service.test.ts (3 tests)
-   - adds an in-transit checkpoint and updates shipment status atomically
-   - accepts delivery after out-for-delivery
-   - rejects skipped, regressive, and post-delivery status changes
 
  ✓ src/test/rates.service.test.ts (4 tests)
    - uses volumetric weight when it exceeds actual weight
@@ -110,17 +103,43 @@ Hasil eksekusi:
    - rejects invalid weight and reports a missing route rate
    - returns a service error if the generated AWB collides
 
- Test Files  5 passed (5)
-      Tests  17 passed (17)
-   Status    ALL PASSED (100%)
+ ✓ src/test/tracking.service.test.ts (3 tests)
+   - normalizes AWB and returns the shipment with newest checkpoints first
+   - rejects an empty AWB without querying Prisma
+   - returns not found for an unknown AWB
+
+ ✓ src/test/courier.service.test.ts (3 tests)
+   - adds an in-transit checkpoint and updates shipment status atomically
+   - accepts delivery after out-for-delivery
+   - rejects skipped, regressive, and post-delivery status changes
+
+ ✓ src/test/security.service.test.ts (11 tests)
+   - successfully issues and verifies a valid cryptographic token
+   - rejects tampered or forged tokens with signature mismatch
+   - rejects malformed token strings
+   - hashes passwords securely with unique salts
+   - blocks unauthenticated requests without valid session with HTTP 401
+   - prevents privilege escalation when user has insufficient role with HTTP 403
+   - permits authorized user with allowed role to proceed
+   - rejects missing Authorization header with HTTP 401
+   - attaches decoded user on valid Bearer token
+   - rejects illegal status skipping attempts with HTTP 409 Conflict
+   - locks terminal status preventing modification once package is delivered
+
+ Test Files  7 passed (7)
+      Tests  31 passed (31)
+   Duration  666ms
+     Status  ALL PASSED (100%)
 ```
 
 ---
 
-## 4. Kesimpulan Kesiapan Pengumpulan
+## 3. Kesimpulan Kesiapan Pengumpulan
 
 Seluruh cakupan penyelesaian MVP telah terpenuhi secara menyeluruh:
 1. **Kode versi final**: Bersih, teruji, dan lulus seluruh linting serta kompilasi produksi.
-2. **Petunjuk menjalankan**: Tersedia secara komprehensif pada berkas [HowToRun.md](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/HowToRun.md).
-3. **Checklist seluruh fitur MVP & status pengujian**: Terdokumentasi lengkap pada berkas [checklist_mvp.md](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/checklist_mvp.md) dengan status **17/17 PASSED**.
-4. **Demonstrasi aplikasi**: Tautan rekaman video demo tersedia di [DemoApps.md](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/DemoApps.md).
+2. **Petunjuk instalasi fresh clone & deploy**: Tersedia komprehensif pada berkas [README.md](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/README.md).
+3. **Laporan hasil uji keamanan**: Terdokumentasi lengkap pada [SECURITY_REPORT.md](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/SECURITY_REPORT.md).
+4. **Panduan log aman & analisis error**: Terdokumentasi lengkap pada [LOGGING_AND_ERROR_HANDLING.md](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/LOGGING_AND_ERROR_HANDLING.md).
+5. **Checklist seluruh fitur MVP & status pengujian**: Terdokumentasi lengkap pada berkas ini dengan status **31/31 PASSED**.
+6. **Demonstrasi aplikasi**: Tautan rekaman video demo tersedia di [DemoApps.md](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/DemoApps.md).
