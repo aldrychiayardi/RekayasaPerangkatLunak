@@ -63,3 +63,4 @@ export function safeLogger(req: Request, res: Response, next: NextFunction): voi
 
   next();
 }
+

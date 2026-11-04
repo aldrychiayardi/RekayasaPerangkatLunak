@@ -173,3 +173,4 @@ Fungsi `safeLogger` dan `maskSensitiveData()` otomatis berjalan pada setiap requ
 Semua error yang dilempar oleh aplikasi dieksekusi melalui `errorHandler`:
 * Error operasional turunan `ApiError` mengembalikan status dan pesan yang ramah pengguna.
 * Error yang tidak terduga (*unexpected error*) dicatat di terminal server untuk kebutuhan perbaikan pengembang, namun hanya mengembalikan respon generik HTTP 500 ke publik demi keamanan sistem.
+

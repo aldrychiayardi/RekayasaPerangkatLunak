@@ -39,3 +39,4 @@ Pull Request ini melengkapi kriteria tugas Rekayasa Perangkat Lunak (RPL) untuk 
 * `npm test` $\rightarrow$ 31 tests passed
 * `npm run lint` $\rightarrow$ Passed
 * `npm run build` $\rightarrow$ Passed
+

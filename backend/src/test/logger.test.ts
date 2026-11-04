@@ -57,3 +57,4 @@ describe("Secure Logging & Data Masking", () => {
     expect(mockRes.on).toHaveBeenCalledWith("finish", expect.any(Function));
   });
 });
+
