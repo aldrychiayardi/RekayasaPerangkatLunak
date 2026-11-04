@@ -16,6 +16,7 @@
   * **Backend REST API:** `http://localhost:4000` (Healthcheck: `http://localhost:4000/api/health`)
 * **Laporan Terkait:**
   * [Laporan Uji Keamanan (SECURITY_REPORT.md)](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/SECURITY_REPORT.md)
+  * [Panduan Log Aman & Penanganan Error (LOGGING_AND_ERROR_HANDLING.md)](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/LOGGING_AND_ERROR_HANDLING.md)
   * [Checklist Fitur MVP (checklist_mvp.md)](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/checklist_mvp.md)
 
 ---
