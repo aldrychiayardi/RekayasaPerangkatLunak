@@ -235,6 +235,18 @@ Arsitektur monorepo NusantaraExpress sangat fleksibel untuk dideploy ke berbagai
 
 Saat server backend mulai, aplikasi otomatis menambahkan tarif default Pontianak untuk rute yang belum memiliki tarif. Tarif yang sudah ada tidak ditimpa. Tidak perlu menjalankan seed untuk menyiapkan matriks tarif.
 
+#### Bootstrap akun OWNER pertama
+
+Database produksi baru tidak otomatis berisi akun demo, dan registrasi publik hanya membuat akun `CUSTOMER`. Untuk membuat OWNER pertama, tambahkan sementara variabel berikut pada service backend Railway:
+
+* `OWNER_BOOTSTRAP_NAME` : nama OWNER.
+* `OWNER_BOOTSTRAP_EMAIL` : email login OWNER.
+* `OWNER_BOOTSTRAP_PASSWORD` : kata sandi unik minimal 12 karakter.
+
+Deploy service backend. Saat database belum memiliki OWNER, aplikasi akan membuat satu akun OWNER dengan kata sandi yang di-hash. Jika sudah ada OWNER, bootstrap tidak mengubah akun apa pun. Setelah Deploy Logs menampilkan `Initial OWNER account provisioned.`, hapus ketiga variabel bootstrap dan deploy ulang agar kata sandi bootstrap tidak tersimpan sebagai environment variable. Jangan menaruh kata sandi di Git, screenshot, atau chat.
+
+Setelah login sebagai OWNER, buka **Dashboard Admin → Kelola Akun** untuk membuat akun ADMIN. Gunakan kata sandi awal yang unik dan sampaikan kepada admin melalui kanal aman. Jangan jalankan `npm run db:seed` terhadap database produksi; script seed menghapus data yang ada.
+
 ---
 
 ## 📑 Dokumentasi Endpoint REST API

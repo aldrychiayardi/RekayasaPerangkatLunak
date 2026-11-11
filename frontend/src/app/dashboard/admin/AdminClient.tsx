@@ -11,6 +11,7 @@ import {
 } from "@/lib/utils";
 import { updateRate } from "@/actions/shipment-actions";
 import { ThermalShippingLabel, ShipmentLabelData } from "@/components/ThermalShippingLabel";
+import { AdminAccountsPanel } from "@/components/AdminAccountsPanel";
 import { RateItem } from "@/app/rates/RatesClient";
 import type { AuthUser } from "@/actions/auth-actions";
 import Link from "next/link";
@@ -28,6 +29,7 @@ import {
   Loader2,
   Percent,
   Lock,
+  UserPlus,
 } from "lucide-react";
 
 export type AdminShipmentItem = ShipmentLabelData & {
@@ -47,6 +49,7 @@ interface AdminClientProps {
   };
   initialShipments: AdminShipmentItem[];
   initialRates: RateItem[];
+  initialUsers: AuthUser[];
 }
 
 export function AdminClient({
@@ -54,9 +57,10 @@ export function AdminClient({
   metrics,
   initialShipments,
   initialRates,
+  initialUsers,
 }: AdminClientProps) {
   const isOwner = currentUser.role === "OWNER";
-  const [activeTab, setActiveTab] = useState<"shipments" | "rates">("shipments");
+  const [activeTab, setActiveTab] = useState<"shipments" | "rates" | "users">("shipments");
 
   // Shipments filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -233,6 +237,19 @@ export function AdminClient({
           <Layers className="w-4 h-4" />
           <span>Manajemen Tarif Ongkir (Master Rate)</span>
         </button>
+        {isOwner && (
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${
+              activeTab === "users"
+                ? "bg-purple-700 text-white shadow-md"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+            }`}
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Kelola Akun ({initialUsers.length})</span>
+          </button>
+        )}
       </div>
 
       {/* TAB 1: Master Shipments Table */}
@@ -555,6 +572,10 @@ export function AdminClient({
             </p>
           )}
         </div>
+      )}
+
+      {isOwner && activeTab === "users" && (
+        <AdminAccountsPanel initialUsers={initialUsers} />
       )}
 
       {/* Printable Thermal Label Modal */}

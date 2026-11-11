@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAdminMetrics, getAllShipments, getAllRates } from "@/actions/shipment-actions";
-import { getCurrentUser } from "@/actions/auth-actions";
+import { getAllUsersAction, getCurrentUser } from "@/actions/auth-actions";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AdminClient } from "./AdminClient";
@@ -20,13 +20,13 @@ export default async function AdminDashboardPage() {
     redirect("/dashboard/customer");
   }
 
-  const [metrics, shipments, rates] = await Promise.all([
+  const isOwner = user.role === "OWNER";
+  const [metrics, shipments, rates, users] = await Promise.all([
     getAdminMetrics(),
     getAllShipments(),
     getAllRates(),
+    isOwner ? getAllUsersAction() : Promise.resolve([]),
   ]);
-
-  const isOwner = user.role === "OWNER";
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -62,6 +62,7 @@ export default async function AdminDashboardPage() {
             metrics={metrics}
             initialShipments={shipments}
             initialRates={rates}
+            initialUsers={users}
           />
         </div>
       </main>
