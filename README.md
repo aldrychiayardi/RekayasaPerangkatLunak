@@ -223,14 +223,17 @@ Arsitektur monorepo NusantaraExpress sangat fleksibel untuk dideploy ke berbagai
 1. Hubungkan repositori ke [Railway](https://railway.app) atau [Render](https://render.com).
 2. Konfigurasi service backend:
    * **Root Directory:** `backend`
-   * **Build Command:** `npm run build && npm run db:push`
-   * **Start Command:** `npm run start`
+   * **Build Command:** `npm run build`
+   * **Pre-deploy Command:** kosongkan
+   * **Start Command:** `npm run db:push && npm run start`
 3. Konfigurasi **Environment Variables**:
-   * `DATABASE_URL` : `file:./dev.db` (atau pasang persistent volume disk jika menggunakan SQLite di container).
+   * `DATABASE_URL` : arahkan ke file SQLite pada persistent volume Railway, misalnya `file:/app/data/nusantara.db` jika mount path volume adalah `/app/data`.
    * `API_PORT` : `4000` (atau sesuaikan dengan `$PORT` platform).
    * `WEB_ORIGIN` : Domain frontend Vercel (misal `https://nusantara-express.vercel.app`).
    * `JWT_SECRET` : Kunci rahasia kriptografi acak yang kuat.
 4. Klik **Deploy**.
+
+Saat server backend mulai, aplikasi otomatis menambahkan tarif default Pontianak untuk rute yang belum memiliki tarif. Tarif yang sudah ada tidak ditimpa. Tidak perlu menjalankan seed untuk menyiapkan matriks tarif.
 
 ---
 
