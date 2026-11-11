@@ -2,10 +2,20 @@ import "./lib/environment.js";
 import { app } from "./app.js";
 import { prisma } from "./lib/prisma.js";
 import { ensureDefaultRates } from "./services/default-rates.service.js";
+import { bootstrapOwner } from "./services/owner-bootstrap.service.js";
 
 const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
 
 async function startServer(): Promise<void> {
+  const ownerCreated = await bootstrapOwner(prisma, {
+    name: process.env.OWNER_BOOTSTRAP_NAME,
+    email: process.env.OWNER_BOOTSTRAP_EMAIL,
+    password: process.env.OWNER_BOOTSTRAP_PASSWORD
+  });
+  if (ownerCreated) {
+    console.log("Initial OWNER account provisioned.");
+  }
+
   const createdRates = await ensureDefaultRates(prisma);
   console.log(`Rute tarif tersedia: ${createdRates} tarif baru ditambahkan.`);
 

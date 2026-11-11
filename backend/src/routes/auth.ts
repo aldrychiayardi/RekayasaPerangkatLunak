@@ -141,3 +141,29 @@ authRouter.get("/users", authenticate(), requireRole("OWNER"), async (_req, res)
   res.json({ users });
 });
 
+authRouter.post("/users", authenticate(), requireRole("OWNER"), async (req, res) => {
+  const body = req.body as Record<string, unknown>;
+  const name = requireString(body?.name, "Nama lengkap");
+  const email = requireString(body?.email, "Email").toLowerCase();
+  const password = requireString(body?.password, "Kata sandi");
+
+  if (!isValidEmail(email)) {
+    throw new ApiError(400, "Format email tidak valid.");
+  }
+  if (password.length < 12) {
+    throw new ApiError(400, "Kata sandi akun admin minimal harus 12 karakter.");
+  }
+
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    throw new ApiError(409, "Email sudah terdaftar. Silakan gunakan email lain.");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+  const user = await prisma.user.create({
+    data: { name, email, password: hashedPassword, role: "ADMIN" },
+    select: { id: true, name: true, email: true, role: true, createdAt: true }
+  });
+
+  res.status(201).json({ message: "Akun admin berhasil dibuat.", user });
+});

@@ -150,3 +150,37 @@ export async function getAllUsersAction(): Promise<AuthUser[]> {
   }
 }
 
+export async function createAdminAction(formData: {
+  name: string;
+  email: string;
+  password: string;
+}): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+    if (!token) {
+      return { success: false, error: "Sesi login tidak ditemukan. Silakan login kembali." };
+    }
+
+    const response = await fetch(`${baseUrl}/api/auth/users`, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+      cache: "no-store",
+    });
+    const data = (await response.json()) as AuthResponse & { message?: string };
+
+    if (!response.ok || !data.user) {
+      return { success: false, error: data.message || "Gagal membuat akun admin." };
+    }
+
+    revalidatePath("/dashboard/admin");
+    return { success: true, user: data.user };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Tidak dapat terhubung ke server.";
+    return { success: false, error: message };
+  }
+}
