@@ -202,7 +202,10 @@ apiRouter.get(
       prisma.shipment.count({ where: { status: { notIn: ["DELIVERED", "FAILED"] } } }),
       prisma.shipment.count({ where: { status: "DELIVERED" } })
     ]);
-    const totalRevenue = shipments.reduce((total, shipment) => total + shipment.totalCost, 0);
+    const totalRevenue = shipments.reduce(
+      (total: number, shipment: (typeof shipments)[number]) => total + shipment.totalCost,
+      0
+    );
     response.json({
       totalShipments,
       totalRevenue: isOwner ? totalRevenue : null,
@@ -260,8 +263,8 @@ apiRouter.get("/rates", async (request, response) => {
     ]
   });
   response.json(rates
-    .filter((rate) => serviceTypes.includes(rate.serviceType))
-    .map((rate) => {
+    .filter((rate: (typeof rates)[number]) => serviceTypes.includes(rate.serviceType))
+    .map((rate: (typeof rates)[number]) => {
       const defaults = defaultRates[rate.serviceType as keyof typeof defaultRates];
       return {
         ...rate,

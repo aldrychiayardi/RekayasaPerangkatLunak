@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { ApiError } from "../lib/errors.js";
 import { normalizeAwb } from "./tracking.service.js";
 
@@ -35,7 +35,7 @@ export async function recordCourierCheckpoint(
     throw new ApiError(400, "Status pengiriman tidak dikenal.");
   }
 
-  return db.$transaction(async (transaction) => {
+  return db.$transaction(async (transaction: Prisma.TransactionClient) => {
     const shipment = await transaction.shipment.findUnique({
       where: { trackingNumber }
     });
