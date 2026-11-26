@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { ApiError } from "../lib/errors.js";
-import { createShipment, type CreateShipmentInput } from "../services/shipment.service.js";
+import {
+  createShipment,
+  MAX_AWB_ATTEMPTS,
+  type CreateShipmentInput
+} from "../services/shipment.service.js";
 
 const shipmentInput: CreateShipmentInput = {
   senderName: "Ayu",
@@ -87,12 +91,13 @@ describe("shipment service", () => {
     });
   });
 
-  it("returns a service error if the generated AWB collides", async () => {
+  it("returns a service error if every generated AWB collides", async () => {
     const { db, shipment } = createDbMock();
-    shipment.create.mockRejectedValueOnce({ code: "P2002" });
+    shipment.create.mockRejectedValue({ code: "P2002" });
 
     await expect(
       createShipment(db, shipmentInput, null, () => "NEX-DUPLICATE")
     ).rejects.toMatchObject({ StatusCode: 503 });
+    expect(shipment.create).toHaveBeenCalledTimes(MAX_AWB_ATTEMPTS);
   });
 });

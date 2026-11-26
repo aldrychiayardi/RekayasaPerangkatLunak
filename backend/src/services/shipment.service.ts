@@ -24,6 +24,12 @@ const defaultRates = {
   VEHICLE: 200_000
 } as const;
 
+/**
+ * Jumlah maksimum percobaan membuat nomor resi (AWB) baru ketika nomor acak
+ * yang dihasilkan bentrok dengan nomor resi yang sudah tersimpan (P2002).
+ */
+export const MAX_AWB_ATTEMPTS = 3;
+
 function generateAwb(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const randomPart = Array.from(
@@ -79,34 +85,42 @@ export async function createShipment(
     ? rate.ratePerKg
     : defaultRates[input.serviceType];
 
-  try {
-    return await db.shipment.create({
-      data: {
-        ...input,
-        userId,
-        trackingNumber: createAwb(),
-        length,
-        width,
-        height,
-        chargeableWeight,
-        totalCost: input.serviceType === "VEHICLE"
-          ? ratePerUnit
-          : Math.round(ratePerUnit * chargeableWeight),
-        status: "ORDER_CREATED",
-        events: {
-          create: {
-            status: "ORDER_CREATED",
-            location: `Drop Point / Gerai ${input.senderCity}`,
-            description: "Pesanan pengiriman berhasil dibuat di sistem NusantaraExpress."
+  const totalCost = input.serviceType === "VEHICLE"
+    ? ratePerUnit
+    : Math.round(ratePerUnit * chargeableWeight);
+
+  // BUGFIX v1.0_dev: sebelumnya satu kali tabrakan nomor resi acak langsung
+  // menggagalkan pesanan (HTTP 503). Sekarang nomor resi dibuat ulang hingga
+  // MAX_AWB_ATTEMPTS kali sebelum menyerah.
+  for (let attempt = 1; attempt <= MAX_AWB_ATTEMPTS; attempt += 1) {
+    try {
+      return await db.shipment.create({
+        data: {
+          ...input,
+          userId,
+          trackingNumber: createAwb(),
+          length,
+          width,
+          height,
+          chargeableWeight,
+          totalCost,
+          status: "ORDER_CREATED",
+          events: {
+            create: {
+              status: "ORDER_CREATED",
+              location: `Drop Point / Gerai ${input.senderCity}`,
+              description: "Pesanan pengiriman berhasil dibuat di sistem NusantaraExpress."
+            }
           }
-        }
-      },
-      include: { events: { orderBy: { timestamp: "desc" } } }
-    });
-  } catch (error) {
-    if (isUniqueConstraintError(error)) {
-      throw new ApiError(503, "Nomor resi gagal dibuat. Silakan coba kembali.");
+        },
+        include: { events: { orderBy: { timestamp: "desc" } } }
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) {
+        throw error;
+      }
     }
-    throw error;
   }
+
+  throw new ApiError(503, "Nomor resi gagal dibuat. Silakan coba kembali.");
 }
