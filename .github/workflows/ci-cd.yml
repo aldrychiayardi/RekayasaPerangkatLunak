@@ -1,0 +1,130 @@
+# Pipeline CI/CD NusantaraExpress (Tugas P11)
+#
+# Alur:  Unit Test (200 UT)  ->  Build  ->  Deploy  ->  Live
+#   - Jika SEMUA unit test lulus (hijau), job Build lalu Deploy berjalan otomatis.
+#   - Jika ADA unit test yang gagal (merah), Build dan Deploy di-SKIP,
+#     sehingga kode yang rusak tidak pernah sampai ke server Live.
+name: CI-CD v1.0
+
+on:
+  push:
+    branches: ["v1.0", "v1.0_dev", "V1.1", "main"]
+  pull_request:
+    branches: ["v1.0", "V1.1", "main"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  DATABASE_URL: "file:./ci.db"
+  JWT_SECRET: "ci-only-jwt-secret-not-used-in-production"
+
+jobs:
+  unit-test:
+    name: 1. Unit Test (200 UT)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npx prisma generate --schema prisma/schema.prisma --config prisma.generate.config.ts
+
+      - name: Run unit tests
+        working-directory: backend
+        run: npx vitest run src/test --reporter=default --reporter=json --outputFile.json=test-results.json
+
+      - name: Write test summary
+        if: always()
+        working-directory: backend
+        run: |
+          node -e '
+            const fs = require("fs");
+            if (!fs.existsSync("test-results.json")) {
+              fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "## Unit Test\n\nHasil test tidak ditemukan.\n");
+              process.exit(0);
+            }
+            const r = JSON.parse(fs.readFileSync("test-results.json", "utf8"));
+            const ok = r.numFailedTests === 0 && r.success;
+            const failed = r.testResults.flatMap((f) =>
+              f.assertionResults.filter((a) => a.status === "failed")
+                .map((a) => "- `" + f.name.split("/src/")[1] + "` > " + a.fullName));
+            const md = [
+              "## " + (ok ? "✅ Unit Test PASSED" : "❌ Unit Test FAILED"),
+              "",
+              "| Total | Passed | Failed |",
+              "|---:|---:|---:|",
+              "| " + r.numTotalTests + " | " + r.numPassedTests + " | " + r.numFailedTests + " |",
+              "",
+              ok ? "Semua unit test lulus -> lanjut **Build** dan **Deploy**."
+                 : "Ada unit test gagal -> **Build dan Deploy dibatalkan (skipped)**.",
+              ...(failed.length ? ["", "### Test yang gagal", ...failed] : [])
+            ].join("\n");
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + "\n");
+          '
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: backend/test-results.json
+          if-no-files-found: ignore
+
+  build:
+    name: 2. Build
+    needs: unit-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend & backend
+        run: npm run build
+
+      - name: Type check / lint
+        run: npm run lint
+
+  deploy:
+    name: 3. Deploy (Live)
+    needs: build
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name }}
+    steps:
+      - name: Trigger deploy hook
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "::warning::Secret DEPLOY_HOOK_URL belum diisi. Deploy di-skip."
+            echo "## ⚠️ Deploy di-skip: secret DEPLOY_HOOK_URL belum diisi" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          curl --fail --silent --show-error -X POST "$DEPLOY_HOOK_URL"
+          {
+            echo "## 🚀 Deploy dipicu"
+            echo ""
+            echo "- Branch: \`${{ github.ref_name }}\`"
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Status: semua unit test lulus, build sukses, deploy dikirim ke server Live."
+          } >> "$GITHUB_STEP_SUMMARY"
