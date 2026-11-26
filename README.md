@@ -1,286 +1,291 @@
-# NusantaraExpress 🚚📦
+# NusantaraExpress 🚚
 
-> **Sistem Informasi & Simulasi Logistik Ekspedisi Terpadu Indonesia**  
-> Mata Kuliah: Rekayasa Perangkat Lunak (RPL) — Semester 3  
-> Status Proyek: **MVP Lengkap, Lulus Uji Keamanan, Siap Demo & Deploy**  
-> Hasil Unit Test: **28/28 Unit Tests PASSED (100%)**
+Sistem informasi ekspedisi dan logistik untuk rute **Pontianak → wilayah rute Seluas** (Kalimantan Barat).
+Proyek mata kuliah **Rekayasa Perangkat Lunak (RPL)**, Semester 3.
 
----
-
-## 🎥 Tautan Video Demonstrasi & Paket Demo
-
-* **Tautan Video Demo Aplikasi (Google Drive):**  
-  👉 [Tonton Video Demonstrasi NusantaraExpress](https://drive.google.com/file/d/198ZOUDHvKgN_Ppl6Wt-JfbVEGz91vxhj/view?usp=sharing)
-* **Demo Live Lokal:**
-  * **Frontend Web App:** `http://localhost:3000`
-  * **Backend REST API:** `http://localhost:4000` (Healthcheck: `http://localhost:4000/api/health`)
-* **Laporan Terkait:**
-  * [Laporan Uji Keamanan (SECURITY_REPORT.md)](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/SECURITY_REPORT.md)
-  * [Panduan Log Aman & Penanganan Error (LOGGING_AND_ERROR_HANDLING.md)](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/LOGGING_AND_ERROR_HANDLING.md)
-  * [Checklist Fitur MVP (checklist_mvp.md)](file:///c:/SEMESTER%203/RekayasaPerangkatLunak/checklist_mvp.md)
+| | |
+|---|---|
+| **Aplikasi Live** | https://rekayasaperangkatlunak-x5bh.vercel.app |
+| **API (health check)** | https://rekayasaperangkatlunak-production.up.railway.app/api/health |
+| **Video demo** | [Google Drive](https://drive.google.com/file/d/198ZOUDHvKgN_Ppl6Wt-JfbVEGz91vxhj/view?usp=sharing) |
+| **Unit test** | 200 test, semua lulus |
+| **Versi rilis** | `V1.1` |
 
 ---
 
-## 📋 Pembagian Struktur Folder (Monorepo)
+## Daftar Isi
 
-Aplikasi dibangun menggunakan pola arsitektur **Monorepo** yang memisahkan aplikasi antarmuka pengguna (Frontend Next.js) dengan penyedia logika bisnis serta basis data (Backend Express + Prisma):
+1. [Fitur Utama](#fitur-utama)
+2. [Teknologi](#teknologi)
+3. [Struktur Proyek](#struktur-proyek)
+4. [Menjalankan Secara Lokal](#menjalankan-secara-lokal)
+5. [Akun Demo & Resi Contoh](#akun-demo--resi-contoh)
+6. [Unit Test & Quality Check](#unit-test--quality-check)
+7. [Branching & CI/CD](#branching--cicd)
+8. [Deployment](#deployment)
+9. [Endpoint REST API](#endpoint-rest-api)
+10. [Daftar Perintah](#daftar-perintah)
+11. [Dokumentasi Lain](#dokumentasi-lain)
+
+---
+
+## Fitur Utama
+
+- **Lacak resi (AWB)** beserta riwayat checkpoint pengiriman.
+- **Cek ongkir** berdasarkan berat aktual dan berat volumetrik (`P × L × T / 6000`).
+- **Dua layanan:** Reguler (tarif per kg) dan Kendaraan (tarif per unit).
+- **Pemesanan pengiriman** oleh pelanggan, lengkap dengan nomor resi otomatis dan cetak label.
+- **Dashboard per peran:** Owner, Admin, Kurir, dan Pelanggan.
+- **Checkpoint kurir berurutan:** status tidak bisa dilompati atau dimundurkan.
+- **Keamanan:** JWT, bcrypt, Helmet, rate limiting, dan log yang menyamarkan data pribadi.
+
+## Teknologi
+
+| Bagian | Teknologi |
+|---|---|
+| Frontend | Next.js 15 (App Router), React 19, Tailwind CSS 4 |
+| Backend | Express 5, Prisma 6, SQLite |
+| Testing | Vitest |
+| CI/CD | GitHub Actions |
+| Hosting | Vercel (frontend), Railway (backend + database) |
+
+## Struktur Proyek
+
+Monorepo dengan npm workspaces:
 
 ```text
 RekayasaPerangkatLunak/
-├── frontend/                     # Aplikasi Web Klien (Next.js 15 App Router + Tailwind CSS)
-│   ├── src/
-│   │   ├── actions/             # Integrasi Server-Side Next.js dengan REST API
-│   │   ├── app/                 # Halaman rute publik dan portal dashboard
-│   │   ├── components/          # Komponen antarmuka (Label Thermal, Calculator, Scanner AWB)
-│   │   └── lib/                 # Utilitas helper, format tanggal, & manipulasi style
-│   ├── public/                  # Aset statis & logo
-│   └── package.json
-│
-├── backend/                      # REST API Server (Express.js 5 + Prisma ORM + SQLite)
-│   ├── src/
-│   │   ├── routes/              # Routing REST API (/api/auth, /api/shipments, /api/rates)
-│   │   ├── services/            # Logika bisnis inti (Rates, Shipment, Tracking, Courier)
-│   │   ├── lib/                 # Prisma client, JWT, security middleware, & centralized error
-│   │   ├── test/                # Unit test Vitest (17 MVP tests + 11 Security tests)
-│   │   ├── app.ts               # Inisialisasi Express, Helmet, CORS, & Rate Limiter
-│   │   └── server.ts            # Entrypoint HTTP listener
+├── .github/
+│   └── workflows/ci-cd.yml     # Pipeline: Unit Test → Build → Deploy
+├── frontend/                   # Next.js
+│   └── src/
+│       ├── actions/            # Server action yang memanggil REST API
+│       ├── app/                # Halaman: /, /track, /rates, /login, /register, /dashboard
+│       ├── components/         # Komponen UI
+│       └── lib/                # Helper
+├── backend/                    # Express REST API
 │   ├── prisma/
-│   │   ├── schema.prisma        # Skema database relasional (User, Shipment, TrackingEvent, PriceRate)
-│   │   ├── seed.ts              # Seeding akun demo, tarif rute Pontianak, dan sampel resi
-│   │   └── dev.db               # Basis data lokal SQLite
-│   └── package.json
-│
-├── .env.example                 # Template konfigurasi variabel lingkungan
-├── package.json                 # Konfigurasi workspace monorepo & script sentral
-└── README.md                    # Dokumentasi utama proyek
+│   │   ├── schema.prisma       # Model: User, Shipment, TrackingEvent, PriceRate
+│   │   ├── seed.ts             # Data demo (khusus lokal)
+│   │   └── sync-routes.ts      # Tambah rute tarif tanpa menghapus data
+│   └── src/
+│       ├── routes/             # api.ts, auth.ts
+│       ├── services/           # Logika bisnis: tarif, pengiriman, tracking, kurir
+│       ├── lib/                # Prisma, JWT, middleware, error handler, logger
+│       └── test/               # 14 file test (200 unit test)
+├── dokumentasi/                # Laporan dan panduan tambahan
+├── .env.example                # Template environment variable
+├── vercel.json                 # Konfigurasi Vercel
+└── package.json                # Workspace dan script utama
 ```
 
 ---
 
-## ⚙️ Prasyarat Sistem (Prerequisites)
+## Menjalankan Secara Lokal
 
-Sebelum melakukan instalasi, pastikan perangkat Anda telah terpasang:
-* **Node.js**: Versi `20.x` LTS atau lebih baru
-* **npm**: Versi `10.x` atau lebih baru
-* **Git**: Versi `2.x` atau lebih baru
+**Prasyarat:** Node.js 20 atau lebih baru, npm 10 atau lebih baru, dan Git.
 
-Verifikasi versi instalasi pada terminal:
-```bash
-node -v
-npm -v
-git -v
-```
+### 1. Clone dan install
 
----
-
-## 🚀 Panduan Instalasi Ulang (FRESH CLONE REPOSITORY)
-
-Ikuti langkah-langkah berikut untuk mengkloning dan menginisialisasi repositori dari awal:
-
-### 1. Kloning Repositori
-Buka terminal dan jalankan:
 ```bash
 git clone https://github.com/aldrychiayardi/RekayasaPerangkatLunak.git
 cd RekayasaPerangkatLunak
-```
-
-### 2. Salin Konfigurasi Environment (`.env`)
-Salin file konfigurasi lingkungan dari template default:
-
-* **Windows (PowerShell):**
-  ```powershell
-  Copy-Item .env.example .env
-  ```
-* **Linux / macOS / Bash:**
-  ```bash
-  cp .env.example .env
-  ```
-
-Konfigurasi bawaan pada berkas `.env`:
-```dotenv
-DATABASE_URL="file:./dev.db"
-API_PORT=4000
-WEB_ORIGIN=http://localhost:3000
-API_BASE_URL=http://localhost:4000
-JWT_SECRET=super-secret-nusantara-express-jwt-token-key-2026
-```
-
-### 3. Pasang Seluruh Dependensi (Install Dependencies)
-Jalankan perintah berikut di direktori root untuk memasang seluruh dependensi workspace (frontend dan backend):
-```bash
 npm install
 ```
 
-### 4. Inisialisasi Basis Data Lokal (SQLite & Prisma)
-Jalankan urutan perintah berikut untuk membentuk skema database dan mengisinya dengan data awal pengujian:
+### 2. Buat file `.env`
+
 ```bash
-# Generate Prisma Client
-npm run db:generate
-
-# Sinkronisasi skema ke file database lokal SQLite (backend/prisma/dev.db)
-npm run db:push
-
-# Mengisi akun demo, tarif default rute Pontianak, dan sampel resi
-npm run db:seed
+cp .env.example .env              # Linux / macOS / Git Bash
+Copy-Item .env.example .env       # Windows PowerShell
 ```
 
-> **Tips:** Jika ingin menambahkan koridor tarif rute baru tanpa menghapus data pesanan atau user yang telah dibuat, gunakan perintah: `npm run db:routes`.
+| Variabel | Nilai default | Fungsi |
+|---|---|---|
+| `DATABASE_URL` | `file:./dev.db` | Lokasi database SQLite |
+| `API_PORT` | `4000` | Port backend (`PORT` dipakai jika ada) |
+| `WEB_ORIGIN` | `http://localhost:3000` | Origin frontend yang diizinkan CORS |
+| `API_BASE_URL` | `http://localhost:4000` | Alamat backend yang dipanggil frontend |
+| `JWT_SECRET` | *(lihat `.env.example`)* | Kunci tanda tangan token. **Ganti di production.** |
 
----
-
-## 💻 Menjalankan Aplikasi (Mode Development)
-
-Untuk menjalankan aplikasi secara lokal dalam mode pengembangan, buka **dua terminal** pada direktori utama:
-
-### Terminal 1 — Backend REST API
-```bash
-npm run dev:backend
-```
-* Server berjalan di: `http://localhost:4000`
-* Tes koneksi backend: `http://localhost:4000/api/health` (menghasilkan status `{"status":"ok"}`)
-
-### Terminal 2 — Frontend Next.js
-```bash
-npm run dev
-```
-* Antarmuka aplikasi dapat diakses melalui browser di: `http://localhost:3000`
-
----
-
-## 🔑 Paket Demo & Kredensial Pengujian (Role Access Matrix)
-
-Aplikasi telah dilengkapi dengan fitur **Quick Demo Login** pada halaman login (`/login`) atau dapat dimasukkan secara manual:
-
-| Peran (Role) | Alamat Email | Kata Sandi | Deskripsi Hak Akses Utama |
-| :--- | :--- | :--- | :--- |
-| **Owner** | `owner@nusantara.com` | `Owner123!` | Akses metrik finansial, omset logistik, dan hak penuh memodifikasi tarif/estimasi rute. |
-| **Admin Operasional** | `admin@nusantara.com` | `Admin123!` | Memantau seluruh operasional kiriman, filter status paket, mode tinjau (*read-only*) tarif. |
-| **Kurir** | `kurir@nusantara.com` | `Kurir123!` | Scanner nomor AWB dan pembaruan riwayat status checkpoint secara berurutan. |
-| **Pelanggan (Customer)** | `budi@gmail.com` | `User123!` | Membuat pesanan pengiriman, kalkulator ongkir live, riwayat kiriman, cetak label thermal waybill. |
-
-*Pengunjung umum juga dapat mendaftarkan akun baru secara mandiri melalui menu **Registrasi** (`/register`).*
-
-### Contoh Nomor Resi (AWB) Siap Lacak
-Nomor AWB sampel bawaan yang dapat langsung dilacak pada menu **Lacak Resi** (`/track`):
-* `NEX-882910` : Pontianak $\rightarrow$ Seluas (Reguler, Status: `OUT_FOR_DELIVERY`)
-* `NEX-554201` : Pontianak $\rightarrow$ Kubu Raya (Reguler, Status: `DELIVERED` - Selesai)
-* `NEX-109283` : Pontianak $\rightarrow$ Anjongan (Kendaraan, Status: `IN_TRANSIT` - Dalam Perjalanan)
-* Resi pesanan baru yang dibuat mandiri oleh akun Pelanggan (`NEX-<tahun><kode-acak>`).
-
----
-
-## 🧪 Eksekusi Unit Test & Quality Assurance
-
-Pengujian unit test menggunakan **Vitest** pada backend yang memvalidasi logika kalkulasi tarif, transaksi pembuatan kiriman, pelacakan resi, alur checkpoint kurir, serta otorisasi keamanan:
+### 3. Siapkan database
 
 ```bash
-# Menjalankan seluruh 28 unit tests dari root
-npm test
-
-# Menjalankan pengecekan kualitas kode & typecheck
-npm run lint
+npm run db:generate   # Generate Prisma Client
+npm run db:push       # Buat tabel di SQLite
+npm run db:seed       # Isi akun demo, tarif, dan resi contoh
 ```
 
-**Status Pengujian Terverifikasi:**
-* **Unit Tests:** `28/28 PASSED (100%)`
-* **Linting:** `0 Errors, 0 Warnings`
+> ⚠️ `db:seed` **menghapus semua data** sebelum mengisi ulang. Untuk menambah rute tarif tanpa menghapus data, pakai `npm run db:routes`.
 
----
-
-## 🏗️ Kompilasi & Menjalankan Mode Produksi (Build & Run)
-
-Untuk melakukan *production build* dan menjalankannya secara lokal:
+### 4. Jalankan (dua terminal)
 
 ```bash
-# 1. Kompilasi Next.js frontend dan TypeScript backend
-npm run build
-
-# 2. Menjalankan server frontend produksi
-npm start
-
-# 3. Menjalankan server backend produksi (di terminal terpisah)
-npm run start:backend
+npm run dev:backend   # Terminal 1 → http://localhost:4000/api/health
+npm run dev           # Terminal 2 → http://localhost:3000
 ```
 
 ---
 
-## 🌐 Panduan Deployment ke Cloud (Deploy Guide)
+## Akun Demo & Resi Contoh
 
-Arsitektur monorepo NusantaraExpress sangat fleksibel untuk dideploy ke berbagai penyedia PaaS / Cloud:
+Akun berikut **hanya tersedia di database lokal** setelah menjalankan `npm run db:seed`. Database production tidak berisi akun demo.
 
-### Opsi A: Deployment Frontend (Next.js) ke Vercel
-1. Hubungkan repositori GitHub ke akun [Vercel](https://vercel.com).
-2. Tentukan konfigurasi project:
-   * **Root Directory:** `frontend`
-   * **Framework Preset:** `Next.js`
-   * **Build Command:** `npm run build`
-   * **Output Directory:** `.next`
-3. Tambahkan **Environment Variable**:
-   * `API_BASE_URL` : URL backend produksi (misal `https://api-nusantara.up.railway.app`).
-4. Klik **Deploy**.
+| Peran | Email | Kata Sandi | Hak Akses |
+|---|---|---|---|
+| Owner | `owner@nusantara.com` | `Owner123!` | Metrik omzet, ubah tarif, kelola akun |
+| Admin | `admin@nusantara.com` | `Admin123!` | Pantau semua pengiriman, lihat tarif |
+| Kurir | `kurir@nusantara.com` | `Kurir123!` | Scan resi dan perbarui checkpoint |
+| Pelanggan | `budi@gmail.com` | `User123!` | Buat pesanan, cek ongkir, cetak label |
 
-### Opsi B: Deployment Backend (Express + SQLite) ke Railway / Render
-1. Hubungkan repositori ke [Railway](https://railway.app) atau [Render](https://render.com).
-2. Konfigurasi service backend:
-   * **Root Directory:** `backend`
-   * **Build Command:** `npm run build`
-   * **Pre-deploy Command:** kosongkan
-   * **Start Command:** `npm run db:push && npm run start`
-3. Konfigurasi **Environment Variables**:
-   * `DATABASE_URL` : arahkan ke file SQLite pada persistent volume Railway, misalnya `file:/app/data/nusantara.db` jika mount path volume adalah `/app/data`.
-   * `API_PORT` : `4000` (atau sesuaikan dengan `$PORT` platform).
-   * `WEB_ORIGIN` : Domain frontend Vercel (misal `https://nusantara-express.vercel.app`).
-   * `JWT_SECRET` : Kunci rahasia kriptografi acak yang kuat.
-4. Klik **Deploy**.
+Halaman `/login` menyediakan tombol **Quick Demo Login**. Pengunjung juga bisa mendaftar sendiri di `/register` sebagai Pelanggan.
 
-Saat server backend mulai, aplikasi otomatis menambahkan tarif default Pontianak untuk rute yang belum memiliki tarif. Tarif yang sudah ada tidak ditimpa. Tidak perlu menjalankan seed untuk menyiapkan matriks tarif.
+**Resi contoh** (lacak di `/track`):
 
-#### Bootstrap akun OWNER pertama
+| Nomor Resi | Rute | Layanan | Status |
+|---|---|---|---|
+| `NEX-882910` | Pontianak → Seluas | Reguler | `OUT_FOR_DELIVERY` |
+| `NEX-554201` | Pontianak → Kubu Raya | Reguler | `DELIVERED` |
+| `NEX-109283` | Pontianak → Anjongan | Kendaraan | `IN_TRANSIT` |
 
-Database produksi baru tidak otomatis berisi akun demo, dan registrasi publik hanya membuat akun `CUSTOMER`. Untuk membuat OWNER pertama, tambahkan sementara variabel berikut pada service backend Railway:
-
-* `OWNER_BOOTSTRAP_NAME` : nama OWNER.
-* `OWNER_BOOTSTRAP_EMAIL` : email login OWNER.
-* `OWNER_BOOTSTRAP_PASSWORD` : kata sandi unik minimal 12 karakter.
-
-Deploy service backend. Saat database belum memiliki OWNER, aplikasi akan membuat satu akun OWNER dengan kata sandi yang di-hash. Jika sudah ada OWNER, bootstrap tidak mengubah akun apa pun. Setelah Deploy Logs menampilkan `Initial OWNER account provisioned.`, hapus ketiga variabel bootstrap dan deploy ulang agar kata sandi bootstrap tidak tersimpan sebagai environment variable. Jangan menaruh kata sandi di Git, screenshot, atau chat.
-
-Setelah login sebagai OWNER, buka **Dashboard Admin → Kelola Akun** untuk membuat akun ADMIN. Gunakan kata sandi awal yang unik dan sampaikan kepada admin melalui kanal aman. Jangan jalankan `npm run db:seed` terhadap database produksi; script seed menghapus data yang ada.
+Resi baru memakai format `NEX-<tahun><6 karakter acak>`, misalnya `NEX-2026ABC234`.
 
 ---
 
-## 📑 Dokumentasi Endpoint REST API
+## Unit Test & Quality Check
 
-Seluruh endpoint backend menggunakan prefiks `/api`:
+```bash
+npm test          # 200 unit test (Vitest)
+npm run lint      # Type check frontend & backend
+npm run build     # Build production
+```
 
-| Method | Endpoint | Akses / Role | Deskripsi Fungsi |
-| :---: | :--- | :---: | :--- |
-| `GET` | `/api/health` | Publik | Memeriksa ketersediaan dan status server API |
-| `POST`| `/api/auth/register` | Publik | Mendaftarkan akun pelanggan baru |
-| `POST`| `/api/auth/login` | Publik | Login pengguna & penerbitan token JWT |
-| `GET` | `/api/rates` | Publik | Mengambil daftar tarif rute Pontianak |
-| `POST`| `/api/rates/calculate` | Publik | Kalkulator estimasi tarif berdasarkan berat & volume |
-| `PUT` | `/api/rates/:id` | **Owner Only** | Mengubah tarif dasar rute dan estimasi hari pengiriman |
-| `GET` | `/api/shipments` | Authenticated | Mengambil riwayat daftar pengiriman |
-| `POST`| `/api/shipments` | Authenticated | Membuat order kiriman baru & generate nomor AWB |
-| `GET` | `/api/shipments/:awb` | Publik | Detail lengkap resi dan histori riwayat checkpoint |
-| `POST`| `/api/shipments/:awb/events`| **Kurir / Admin**| Memperbarui checkpoint dan status paket secara sekuensial |
-| `GET` | `/api/admin/metrics` | **Owner / Admin**| Mengambil ringkasan omset dan metrik operasional logistik |
+Cakupan test:
+
+| Area | Yang diuji |
+|---|---|
+| Tarif | Berat volumetrik, berat tagihan, tarif default, validasi input, semua rute |
+| Pengiriman | Biaya per rute dan layanan, validasi, retry nomor resi yang bentrok |
+| Kurir | Semua transisi status yang sah maupun yang ditolak |
+| Tracking & lokasi | Normalisasi nomor resi, rute yang didukung |
+| Keamanan | JWT, bcrypt, middleware autentikasi, otorisasi peran, anti-tampering |
+| Logger | Penyamaran kata sandi, token, nomor HP, dan email di log |
+| Admin & bootstrap | Ubah tarif, pembuatan akun Owner pertama |
 
 ---
 
-## 📜 Perintah Workspace (Command Cheat Sheet)
+## Branching & CI/CD
 
-| Perintah | Deskripsi |
-| :--- | :--- |
-| `npm run dev` | Menjalankan frontend Next.js (port 3000) |
-| `npm run dev:backend` | Menjalankan backend Express dengan tsx watch (port 4000) |
-| `npm test` | Menjalankan seluruh 28 unit test dari root |
-| `npm run lint` | Menjalankan ESLint & validasi tipe TypeScript |
-| `npm run build` | Melakukan build kompilasi produksi frontend & backend |
-| `npm start` | Menjalankan frontend hasil kompilasi produksi |
-| `npm run start:backend` | Menjalankan backend hasil kompilasi produksi |
-| `npm run db:generate` | Menghasilkan Prisma Client |
-| `npm run db:push` | Menerapkan skema Prisma ke database SQLite |
-| `npm run db:seed` | Inisialisasi ulang basis data dan data demonstrasi |
-| `npm run db:routes` | Menambahkan rute layanan Pontianak tanpa reset data pesanan |
+| Branch | Fungsi |
+|---|---|
+| `main` | Production |
+| `v1.0` | Baseline rilis pertama |
+| `v1.0_dev` | Pengembangan: fitur baru dan perbaikan bug |
+| `V1.1` | Rilis berikutnya, dibuat dari `v1.0_dev` setelah semua test lulus |
+
+Pipeline (`.github/workflows/ci-cd.yml`) berjalan setiap ada push ke `main`, `v1.0`, `v1.0_dev`, atau `V1.1`:
+
+```text
+1. Unit Test (200 UT) ──► 2. Build ──► 3. Deploy (Vercel)
+```
+
+- **Semua test lulus:** Build dan Deploy berjalan otomatis.
+- **Ada test yang gagal:** Build dan Deploy di-*skip*, jadi versi Live sebelumnya tetap berjalan.
+- Jumlah total/lulus/gagal tampil di halaman **Summary** GitHub Actions.
+- Untuk `v1.0_dev` dan `V1.1`, auto-deploy bawaan Vercel dimatikan di `vercel.json`. Deploy hanya dipicu oleh pipeline melalui secret `DEPLOY_HOOK_URL` per environment.
+
+Penjelasan lengkap ada di [dokumentasi/P11_BRANCHING_CI_CD.md](dokumentasi/P11_BRANCHING_CI_CD.md).
+
+---
+
+## Deployment
+
+### Frontend: Vercel
+
+Project Vercel memakai `vercel.json` di root repo. Environment variable yang wajib diisi:
+
+| Variabel | Nilai |
+|---|---|
+| `API_BASE_URL` | URL backend Railway, misalnya `https://rekayasaperangkatlunak-production.up.railway.app` |
+
+> Jika `API_BASE_URL` kosong, frontend memanggil `localhost:4000` dan halaman login/daftar menampilkan **"fetch failed"**. Setelah mengubah environment variable, lakukan **redeploy**.
+
+### Backend: Railway
+
+| Pengaturan | Nilai |
+|---|---|
+| Root Directory | `backend` |
+| Build Command | `npm run build` |
+| Start Command | `npm run db:push && npm run start` |
+
+| Variabel | Keterangan |
+|---|---|
+| `DATABASE_URL` | File SQLite di persistent volume, misalnya `file:/app/data/nusantara.db` |
+| `WEB_ORIGIN` | Domain frontend Vercel |
+| `JWT_SECRET` | Kunci acak yang kuat |
+
+Saat backend menyala, tarif default untuk rute yang belum punya tarif ditambahkan otomatis. Tarif yang sudah ada tidak ditimpa.
+
+### Membuat akun Owner pertama di production
+
+1. Tambahkan sementara di Railway: `OWNER_BOOTSTRAP_NAME`, `OWNER_BOOTSTRAP_EMAIL`, dan `OWNER_BOOTSTRAP_PASSWORD` (minimal 12 karakter).
+2. Deploy, lalu tunggu log `Initial OWNER account provisioned.`
+3. **Hapus ketiga variabel tersebut** dan deploy ulang.
+4. Login sebagai Owner, lalu buat akun Admin di **Dashboard → Kelola Akun**.
+
+Jika Owner sudah ada, bootstrap tidak mengubah apa pun. Jangan pernah menjalankan `npm run db:seed` ke database production.
+
+---
+
+## Endpoint REST API
+
+Semua endpoint memakai prefiks `/api`.
+
+| Method | Endpoint | Akses | Fungsi |
+|---|---|---|---|
+| `GET` | `/health` | Publik | Status server |
+| `POST` | `/auth/register` | Publik | Daftar akun pelanggan |
+| `POST` | `/auth/login` | Publik | Login dan terima token JWT |
+| `GET` | `/auth/me` | Login | Profil akun yang sedang login |
+| `GET` | `/auth/users` | Owner | Daftar akun |
+| `POST` | `/auth/users` | Owner | Buat akun Admin |
+| `GET` | `/rates` | Publik | Daftar tarif rute |
+| `POST` | `/rates/calculate` | Publik | Hitung ongkir |
+| `PUT` | `/rates/:id` | Owner | Ubah tarif dan estimasi |
+| `GET` | `/shipments` | Login (opsional) | Daftar pengiriman; pelanggan hanya melihat miliknya |
+| `POST` | `/shipments` | Login (opsional) | Buat pengiriman dan nomor resi |
+| `GET` | `/shipments/:awb` | Publik | Detail resi dan riwayat checkpoint |
+| `POST` | `/shipments/:awb/events` | Kurir, Admin, Owner | Tambah checkpoint status |
+| `GET` | `/admin/metrics` | Admin, Owner | Ringkasan operasional (omzet hanya untuk Owner) |
+| `GET` | `/tracking-events` | Publik | Checkpoint terbaru |
+
+---
+
+## Daftar Perintah
+
+| Perintah | Fungsi |
+|---|---|
+| `npm run dev` | Jalankan frontend (port 3000) |
+| `npm run dev:backend` | Jalankan backend dengan hot reload (port 4000) |
+| `npm test` | Jalankan 200 unit test |
+| `npm run lint` | Type check frontend & backend |
+| `npm run build` | Build frontend & backend |
+| `npm start` | Jalankan frontend hasil build |
+| `npm run start:backend` | Jalankan backend hasil build |
+| `npm run db:generate` | Generate Prisma Client |
+| `npm run db:push` | Terapkan skema ke database |
+| `npm run db:seed` | Reset database dan isi data demo |
+| `npm run db:routes` | Tambah rute tarif tanpa menghapus data |
+
+---
+
+## Dokumentasi Lain
+
+| Dokumen | Isi |
+|---|---|
+| [HowToRun.md](dokumentasi/HowToRun.md) | Panduan instalasi lebih rinci |
+| [DemoApps.md](dokumentasi/DemoApps.md) | Tautan video demo |
+| [SECURITY_REPORT.md](dokumentasi/SECURITY_REPORT.md) | Hasil uji keamanan |
+| [LOGGING_AND_ERROR_HANDLING.md](dokumentasi/LOGGING_AND_ERROR_HANDLING.md) | Log aman dan penanganan error |
+| [checklist_mvp.md](dokumentasi/checklist_mvp.md) | Checklist fitur MVP |
+| [P11_BRANCHING_CI_CD.md](dokumentasi/P11_BRANCHING_CI_CD.md) | Branching, unit test, dan CI/CD |
