@@ -28,7 +28,7 @@ const defaultRates = {
  * Jumlah maksimum percobaan membuat nomor resi (AWB) baru ketika nomor acak
  * yang dihasilkan bentrok dengan nomor resi yang sudah tersimpan (P2002).
  */
-export const MAX_AWB_ATTEMPTS = 1;
+export const MAX_AWB_ATTEMPTS = 3;
 
 function generateAwb(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
